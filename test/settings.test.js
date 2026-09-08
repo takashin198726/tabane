@@ -34,3 +34,7 @@ test('the workspace column is on by default', () => {
   assert.equal(DEFAULTS.workspaceSwitcher.column, true);
   assert.equal(mergeSettings({ workspaceSwitcher: { column: false } }).workspaceSwitcher.column, false);
 });
+
+test('group folding is on by default', () => {
+  assert.equal(DEFAULTS.grouping.folding, true);
+});

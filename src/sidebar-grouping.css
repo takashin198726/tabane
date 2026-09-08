@@ -23,3 +23,42 @@
   transform: scaleY(1.45);
   transform-origin: center;
 }
+
+/* Folding: the glyph of a group's first row toggles the group. */
+.tabane-glyph--fold {
+  cursor: pointer;
+  padding: 0 0.15em;
+  border-radius: 3px;
+}
+
+.tabane-glyph--fold:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.tabane-count {
+  margin-left: 0.35em;
+  font-size: 0.85em;
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+.tabane-badge {
+  margin-left: 0.35em;
+  padding: 0 0.45em;
+  border-radius: 999px;
+  background: #e01e5a;
+  color: #fff;
+  font-size: 0.75em;
+  font-weight: 700;
+}
+
+/* A folded row whose hidden rows have unreads: make its label stand out like an unread row. */
+.tabane-row--unread .tabane-label {
+  font-weight: 700;
+}
+
+/* Rows hidden by folding. Slack positions rows absolutely, so src/sidebar-grouping.js also
+   shifts the rows below them up with a transform. */
+[data-tabane-hidden] {
+  display: none !important;
+}

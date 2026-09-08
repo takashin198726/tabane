@@ -12,7 +12,10 @@
   .rail button { display: block; width: 100%; background: none; border: 0; color: inherit; padding: 8px 0; }
   .p-tab_rail__shortcut_hint { font-size: 9px; opacity: .6; }
   .sidebar { width: 260px; background: #3f0e40; color: #cfc3cf; padding: 12px 0; }
-  [role="listitem"] { padding: 3px 16px; }
+  .c-virtual_list__scroll_container { position: relative; }
+  [role="listitem"] { position: absolute; left: 0; right: 0; height: 28px; box-sizing: border-box; padding: 3px 16px; }
+  .p-channel_sidebar__badge { float: right; background: #e01e5a; color: #fff; border-radius: 999px; padding: 0 6px; font-size: 11px; }
+  .p-channel_sidebar__channel--unread .p-channel_sidebar__name { color: #fff; font-weight: 700; }
   [role="listitem"].unread .p-channel_sidebar__name { color: #fff; font-weight: 700; }
   [role="listitem"].header { color: #fff; font-weight: 700; margin-top: 8px; }
   .p-channel_sidebar__name::before { content: "# "; opacity: .6; }
@@ -48,12 +51,17 @@
   (() => {
     const store = {};
     const listeners = [];
+    const local = {};
     window.chrome = {
       runtime: { getURL: (path) => '/' + path },
       storage: {
         sync: {
           get: async () => JSON.parse(JSON.stringify(store)),
           set: async (values) => { Object.assign(store, JSON.parse(JSON.stringify(values))); listeners.forEach((fn) => fn({}, 'sync')); },
+        },
+        local: {
+          get: async () => JSON.parse(JSON.stringify(local)),
+          set: async (values) => { Object.assign(local, JSON.parse(JSON.stringify(values))); },
         },
         onChanged: { addListener: (fn) => listeners.push(fn) },
       },
@@ -148,24 +156,34 @@ timeout: 30</pre>
 
 <script>
   const CHANNELS = [
-    ['general'], ['proj'], ['proj-dev-backend'], ['proj-dev-frontend'], ['proj-ops-a'], ['proj-ops-b'],
+    ['general'], ['proj'], ['proj-dev-backend'], ['proj-dev-frontend', 'channel', '', { unread: true, mentions: 2 }], ['proj-ops-a'], ['proj-ops-b', 'channel', '', { unread: true }],
     ['random'], ['team-a'], ['team-b'], ['', 'header', 'Direct messages'], ['john-doe', 'im'],
   ];
-  function makeItem(name, type = 'channel', headerText = '') {
+  const ROW_HEIGHT = 28;
+  function makeItem(name, type = 'channel', headerText = '', { unread = false, mentions = 0 } = {}) {
     const item = document.createElement('div');
     item.setAttribute('role', 'listitem');
     if (type === 'header') { item.className = 'header'; item.textContent = headerText; return item; }
     const ch = document.createElement('div');
-    ch.className = 'p-channel_sidebar__channel';
+    ch.className = 'p-channel_sidebar__channel' + (unread ? ' p-channel_sidebar__channel--unread' : '');
     ch.setAttribute('data-qa-channel-sidebar-channel-type', type);
     const nameEl = document.createElement('span');
     nameEl.className = 'p-channel_sidebar__name';
     nameEl.setAttribute('data-qa', `channel_sidebar_name_${name}`);
     nameEl.textContent = name;
-    ch.append(nameEl); item.append(ch);
+    ch.append(nameEl);
+    if (mentions) { const b = document.createElement('span'); b.className = 'c-badge p-channel_sidebar__badge'; b.textContent = mentions; ch.append(b); }
+    item.append(ch);
     return item;
   }
+  // Lay rows out like Slack's virtual list: absolute rows with an inline top, fixed container height.
+  function layout(list) {
+    let top = 6;
+    for (const item of list.children) { item.style.top = top + 'px'; item.style.height = ROW_HEIGHT + 'px'; top += ROW_HEIGHT; }
+    list.style.height = top + 'px';
+  }
   document.getElementById('list').replaceChildren(...CHANNELS.map((c) => makeItem(...c)));
+  layout(document.getElementById('list'));
 
   // More thread replies than fit in the scroll box, so the thread copy has to scroll.
   for (let i = 1; i <= 8; i++) {

@@ -29,7 +29,7 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 
 | Feature | Where it runs | Status |
 |---|---|---|
-| **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
+| **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels. Click a group's `┬` to fold it: the first row stays as `proj ▸ 5`, bold with a mention badge when the hidden rows have unreads; folds are remembered per workspace | `app.slack.com` | Grouping **verified on live Slack** (2026-09-08); folding verified against the fixture |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
 | **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
 | **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink). Forwarded messages copy as an attributed quote, and a button in the thread pane header copies the whole thread with one attribution line per reply | `app.slack.com` | Message, thread and forwarded-message copy **verified on live Slack** (2026-09-08) |
@@ -64,7 +64,12 @@ please make that call for your own organisation.
   group and is shown as `proj┬/`.
 - Direct messages, group DMs, section headers and buttons are never grouped, and they also
   break a group (an entry with no name separates the channels above and below it).
-- Nesting stops at 3 levels (`MAX_DEPTH` in `src/sidebar-grouping.js`).
+- Nesting depth (1–4) is set in the options page.
+- Folding hides the group's other rows and shifts the rows below up with a `transform`,
+  because Slack positions sidebar rows absolutely. The list keeps Slack's total height, so a
+  folded sidebar has some empty space at the bottom. Folding works on the rows Slack has
+  rendered; on a very long sidebar (hundreds of channels) rows far off-screen are not in the
+  DOM and the shift may be off until they scroll into view.
 - Grouping is positional: it only works when related channels sit next to each other, i.e.
   with the sidebar sorted alphabetically.
 
@@ -86,6 +91,7 @@ block at the top of the file, the noise rules live in `NOISE_RULES` in
 | `channel` + `channelTypeAttr` | `.p-channel_sidebar__channel[data-qa-channel-sidebar-channel-type]` | `channel` / `private` / `im` / `mpim` |
 | `name` | `.p-channel_sidebar__name` | Element whose text is the channel name |
 | `nameKeyAttr` | `data-qa` on the name element | Rewritten by Slack when a virtual-list row is reused; used as a re-render trigger |
+| `unreadClass` / `badge` | `.p-channel_sidebar__channel--unread`, `.p-channel_sidebar__badge` | Unread state and mention count, aggregated onto a folded row |
 | (CSS) | `.p-workspace_switcher_prototype` | Container of the workspace column; `display: none` in the browser until opened as a popover |
 | (CSS) | `.p-client_workspace_wrapper` | The rest of the client; shifted 60px right to sit beside the column |
 | copy `message` / `actionsGroup` | `[data-qa="message_container"]`, `[data-qa="message-actions"]` | A message and its hover toolbar, where the copy button is inserted |
@@ -117,7 +123,7 @@ Candidate features and the reasoning behind them are in
 [docs/feature-candidates.md](docs/feature-candidates.md) (Japanese).
 
 - Verify open-in-browser in a browser profile where Slack has not yet remembered "open in browser"
-- Group folding (click a parent row to collapse its children)
+- Verify group folding on live Slack
 - Userscript build for Tampermonkey
 - Chrome Web Store listing
 

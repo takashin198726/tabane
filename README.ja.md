@@ -27,7 +27,7 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 
 | 機能 | 動作する URL | 状態 |
 |---|---|---|
-| **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
+| **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示。グループの `┬` をクリックすると折りたたみ、先頭行が `proj ▸ 5` になる（隠した行に未読があれば太字 + メンション数バッジ）。折りたたみ状態はワークスペースごとに記憶 | `app.slack.com` | グルーピングは**実 Slack で動作確認済み**（2026-09-08）。折りたたみは fixture で検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
 | **ワークスペース切替バー** – Slack 自身が持つワークスペース列（ログイン中のワークスペースごとに 1 アイコン）を常時表示。ChromeOS の UA で全ワークスペースを列に載せ、CSS で隠された列を表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08、6 ワークスペース） |
 | **Markdown でコピー** – ホバーツールバーのボタンで、メッセージを GitHub 風 Markdown（`text/plain`）と HTML（`text/html`）の両方でクリップボードへ。Markdown エディタには Markdown として、Slack に貼り戻すと書式付きで入る。Shift+クリックで引用元行（投稿者・時刻・チャンネル・パーマリンク）付き。転送メッセージは帰属付きの引用になり、スレッド枠ヘッダのボタンでスレッド全体を返信ごとの帰属行付きでコピーできる | `app.slack.com` | 単体・スレッド一括・転送メッセージのコピーとも**実 Slack で動作確認済み**（2026-09-08） |
@@ -59,7 +59,8 @@ Chrome 111 以降が必要です（`"world": "MAIN"` のコンテンツスクリ
 - 名前全体が接頭辞と一致するチャンネル（`proj-dev` の隣の `proj`）はグループのルートになり、
   `proj┬/` と表示します。
 - DM・グループ DM・セクション見出し・ボタンはグルーピングせず、グループの区切りにもなります。
-- ネストは 3 階層まで（`src/sidebar-grouping.js` の `MAX_DEPTH`）。
+- ネストの深さ（1〜4）はオプションページで設定します。
+- 折りたたみは、グループの他の行を隠し、その下の行を `transform` で上に詰めます（Slack はサイドバーの行を絶対配置しているため）。リストの高さは Slack のままなので、畳んだ分だけ下端に空きができます。Slack が描画している行だけが対象なので、数百チャンネルある長いサイドバーでは、画面外の行がスクロールで現れるまでずれが出ることがあります。
 - 位置ベースの処理なので、関連チャンネルが隣り合っている必要があります。サイドバーを
   アルファベット順にしてください。
 
@@ -80,6 +81,7 @@ Slack 拡張の死因はいつも同じで、Slack がマークアップを変�
 | `channel` + `channelTypeAttr` | `.p-channel_sidebar__channel[data-qa-channel-sidebar-channel-type]` | `channel` / `private` / `im` / `mpim` |
 | `name` | `.p-channel_sidebar__name` | チャンネル名のテキストを持つ要素 |
 | `nameKeyAttr` | name 要素の `data-qa` | 仮想リストの行が別チャンネルに再利用されると Slack が書き換える。再描画のトリガに使用 |
+| `unreadClass` / `badge` | `.p-channel_sidebar__channel--unread`, `.p-channel_sidebar__badge` | 未読とメンション数。折りたたんだ行に集約して表示 |
 | （CSS） | `.p-workspace_switcher_prototype` | ワークスペース列のコンテナ。ブラウザでは `display: none` で、ポップオーバーとして開くまで隠れている |
 | （CSS） | `.p-client_workspace_wrapper` | クライアント本体。列の横に並ぶよう 60px 右にずらす |
 | copy `message` / `actionsGroup` | `[data-qa="message_container"]`, `[data-qa="message-actions"]` | メッセージとホバーツールバー。ここにコピーボタンを差し込む |
@@ -110,7 +112,7 @@ DOM 層を確認する用途です。
 機能候補と選定理由は [docs/feature-candidates.md](docs/feature-candidates.md) にまとめています。
 
 - ブラウザで開く を、Slack が「ブラウザで開く」を記憶していないプロファイルで検証
-- グループの折りたたみ（親行クリックで子行を畳む）
+- グループの折りたたみを実 Slack で検証
 - Tampermonkey 向け userscript ビルド
 - Chrome Web Store への公開
 
