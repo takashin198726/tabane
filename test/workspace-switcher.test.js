@@ -69,7 +69,8 @@ test('client hints report Chrome OS while brands and mobile are kept', async () 
 test('high-entropy client hints report Chrome OS and keep the other values', async () => {
   const nav = await navigatorAfterScript({ userAgent: MAC_UA });
   const values = await nav.userAgentData.getHighEntropyValues(['platform', 'platformVersion', 'architecture']);
-  assert.deepEqual(values, { platform: 'Chrome OS', platformVersion: '14.0.0', architecture: 'arm' });
+  // Spread: the object comes from the vm realm, so its prototype differs from this realm's.
+  assert.deepEqual({ ...values }, { platform: 'Chrome OS', platformVersion: '14.0.0', architecture: 'arm' });
 });
 
 test('client hints serialise to JSON with the spoofed platform', async () => {
