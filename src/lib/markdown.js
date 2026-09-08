@@ -16,6 +16,17 @@ function escapeHtml(text) {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Slack shows some links as a "slug": just the domain, or the URL itself. Those read best
+// as the bare URL.
+function isUrlSlug(text, href) {
+  const shown = text.trim();
+  if (shown === '') {
+    return true;
+  }
+  const bare = (value) => value.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  return bare(href).startsWith(bare(shown));
+}
+
 // ---- inline content --------------------------------------------------------------------
 
 function inlineMarkdown(nodes) {
@@ -58,7 +69,7 @@ function inlineNodeMarkdown(node) {
       if (!href) {
         return text;
       }
-      return text.trim() === href ? href : `[${text}](${href})`;
+      return isUrlSlug(text, href) ? href : `[${text}](${href})`;
     }
     default:
       return inner();
@@ -101,7 +112,11 @@ function inlineNodeHtml(node) {
       return escapeHtml(node.attrs.alt ?? '');
     case 'a': {
       const href = node.attrs.href ?? node.attrs['data-stringify-link'];
-      return href ? `<a href="${escapeHtml(href)}">${inner()}</a>` : inner();
+      if (!href) {
+        return inner();
+      }
+      const text = isUrlSlug(textContent(node), href) ? escapeHtml(href) : inner();
+      return `<a href="${escapeHtml(href)}">${text}</a>`;
     }
     default:
       return inner();
@@ -176,7 +191,7 @@ function blockMarkdown(block) {
     case 'pre':
       return `\`\`\`\n${block.text.replace(/\n$/, '')}\n\`\`\``;
     case 'quote':
-      return quoteLines(inlineMarkdown(block.children).trim());
+      return quoteLines(blocksMarkdown({ children: block.children }));
     case 'list': {
       const counters = [];
       return block.items
@@ -198,7 +213,7 @@ function blockHtml(block) {
     case 'pre':
       return `<pre>${escapeHtml(block.text.replace(/\n$/, ''))}</pre>`;
     case 'quote':
-      return `<blockquote>${inlineHtml(block.children)}</blockquote>`;
+      return `<blockquote>${blocksHtml({ children: block.children })}</blockquote>`;
     case 'list': {
       const tag = block.ordered ? 'ol' : 'ul';
       return `<${tag}>${block.items.map(({ children }) => `<li>${inlineHtml(children)}</li>`).join('')}</${tag}>`;
@@ -208,6 +223,14 @@ function blockHtml(block) {
       return html === '' ? '' : `<p>${html}</p>`;
     }
   }
+}
+
+function blocksMarkdown(root) {
+  return toBlocks(root).map(blockMarkdown).filter((text) => text !== '').join('\n\n');
+}
+
+function blocksHtml(root) {
+  return toBlocks(root).map(blockHtml).join('');
 }
 
 function quoteLines(text) {
@@ -222,7 +245,7 @@ function quoteLines(text) {
 // header: optional { markdown, html } from formatSourceHeader(); when given, the whole
 // message is emitted as a quote with the header on top.
 export function treeToMarkdown(root, { header } = {}) {
-  const body = toBlocks(root).map(blockMarkdown).filter((text) => text !== '').join('\n\n');
+  const body = blocksMarkdown(root);
   if (!header) {
     return body;
   }
@@ -230,7 +253,7 @@ export function treeToMarkdown(root, { header } = {}) {
 }
 
 export function treeToHtml(root, { header } = {}) {
-  const body = toBlocks(root).map(blockHtml).join('');
+  const body = blocksHtml(root);
   if (!header) {
     return body;
   }

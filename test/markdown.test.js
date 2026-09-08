@@ -84,7 +84,7 @@ test('HTML output mirrors the structure for pasting back into Slack', () => {
   );
   assert.equal(
     treeToHtml(tree),
-    '<p><b>bold</b> &amp; <a href="https://example.com/?a=1&amp;b=2">link</a><br><code>&lt;x&gt;</code></p><pre>a &lt; b</pre><blockquote>q</blockquote><ul><li>item</li></ul>',
+    '<p><b>bold</b> &amp; <a href="https://example.com/?a=1&amp;b=2">link</a><br><code>&lt;x&gt;</code></p><pre>a &lt; b</pre><blockquote><p>q</p></blockquote><ul><li>item</li></ul>',
   );
 });
 
@@ -105,4 +105,25 @@ test('whitespace between blocks (DOM indentation) produces no empty paragraphs',
   const tree = block(t('\n  '), section(t('a')), t('\n  '), el('pre', s('pre'), [t('x')], ['c-mrkdwn__pre']), t('\n'));
   assert.equal(treeToMarkdown(tree), 'a\n\n```\nx\n```');
   assert.equal(treeToHtml(tree), '<p>a</p><pre>x</pre>');
+});
+
+test('a quote may contain blocks (sections, code); each line is prefixed', () => {
+  const tree = block(el('blockquote', s('quote'), [section(t('intro')), el('pre', s('pre'), [t('x = 1')], ['c-mrkdwn__pre'])], ['c-mrkdwn__quote']));
+  assert.equal(treeToMarkdown(tree), '> intro\n>\n> ```\n> x = 1\n> ```');
+  assert.equal(treeToHtml(tree), '<blockquote><p>intro</p><pre>x = 1</pre></blockquote>');
+});
+
+test('a link whose visible text is only the start of its URL (Slack slug) becomes the bare URL', () => {
+  const href = 'https://x.slack.com/archives/C1/p1?thread_ts=2&cid=C1';
+  const slug = el('a', { href }, [el('div', s('replace', { 'data-stringify-text': 'https://x.slack.com/' }), [t('x.slack.com')], ['p-rich_text_slug'])], ['c-link']);
+  assert.equal(treeToMarkdown(block(section(slug))), href);
+  assert.equal(treeToHtml(block(section(slug))), `<p><a href="${href.replace(/&/g, '&amp;')}">${href.replace(/&/g, '&amp;')}</a></p>`);
+});
+
+test('a forwarded message renders as a quote with an attribution line on top', () => {
+  // src/copy-markdown.js builds this shape for [data-qa="forwarded_message_card"]
+  const attribution = section(el('b', s('bold'), [t('マエス')]), t(' · '), el('a', { href: 'https://p' }, [t('9月2日')], ['c-link']), t(' · '), t('all_自己紹介 内のスレッド'));
+  const tree = block(el('blockquote', s('quote'), [attribution, section(t('本文'), el('br'), t('二行目'))], ['tabane-forwarded']));
+  assert.equal(treeToMarkdown(tree), '> **マエス** · [9月2日](https://p) · all_自己紹介 内のスレッド\n>\n> 本文\n> 二行目');
+  assert.equal(treeToHtml(tree), '<blockquote><p><b>マエス</b> · <a href="https://p">9月2日</a> · all_自己紹介 内のスレッド</p><p>本文<br>二行目</p></blockquote>');
 });

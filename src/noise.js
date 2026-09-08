@@ -4,7 +4,7 @@
 //     `tabane-hide-rail-activity`; src/noise.css does the hiding.
 //   - The heuristic scans banner-like containers and hides those whose wording looks like a
 //     trial, upsell or hint, so promotions Slack adds later are caught too. Hidden elements
-//     get data-tabane-noise="upsell|hint" and are listed with console.debug for inspection.
+//     get data-tabane-noise="upsell|hint" and are listed with console.info for inspection.
 (async () => {
   if (window.top !== window) {
     return;
@@ -57,7 +57,7 @@
       const kind = classifyNoise({ className: el.getAttribute('class') ?? '', text: el.textContent.slice(0, 500) });
       if (kind) {
         el.setAttribute(HIDDEN_ATTR, kind);
-        console.debug(`[tabane] hid ${kind}:`, el);
+        console.info(`[tabane] hid ${kind}:`, el);
       }
     }
   }

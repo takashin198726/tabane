@@ -27,6 +27,11 @@
     timestamp: 'a.c-timestamp',
     // Channel name in the pane header.
     channelName: '[data-qa="channel_name"]',
+    // Attachments below the body: forwarded messages carry the original text here.
+    attachment: '.c-message_attachment',
+    forwardedCard: '[data-qa="forwarded_message_card"]',
+    cardByline: '[class^="byline"]', // author + date link
+    cardContext: '[class^="context"]', // e.g. "all_自己紹介 内のスレッド"
   };
 
   const CLASS = {
@@ -96,9 +101,63 @@
     return '';
   }
 
+  const textNode = (text) => ({ type: 'text', text });
+  const element = (tag, attrs, children, classes = []) => ({ type: 'el', tag, attrs, classes, children });
+  const richTextIn = (el) => Array.from(el.querySelectorAll(SELECTORS.richText));
+
+  // True when the blocks contain no text outside links (a forwarded message's own body is
+  // just a link to the original, which the attachment quote already carries).
+  function isLinkOnly(blocks) {
+    for (const block of blocks) {
+      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      while (walker.nextNode()) {
+        if (walker.currentNode.nodeValue.trim() !== '' && !walker.currentNode.parentElement.closest('a')) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // An attachment becomes a quote: attribution line (author · date link · context) when it
+  // is a forwarded message, then the attached rich text.
+  function attachmentToQuote(attachmentEl) {
+    const blocks = richTextIn(attachmentEl);
+    const card = attachmentEl.querySelector(SELECTORS.forwardedCard);
+    if (blocks.length === 0 && !card) {
+      return null;
+    }
+    const children = [];
+    if (card) {
+      const dateLink = card.querySelector('a[href]');
+      const date = dateLink?.textContent.trim() ?? '';
+      const byline = card.querySelector(SELECTORS.cardByline)?.textContent.trim() ?? '';
+      const author = date && byline.endsWith(date) ? byline.slice(0, -date.length).trim() : byline;
+      const context = card.querySelector(SELECTORS.cardContext)?.textContent.trim() ?? '';
+      const parts = [];
+      if (author) {
+        parts.push(element('b', { 'data-stringify-type': 'bold' }, [textNode(author)]));
+      }
+      if (dateLink) {
+        parts.push(element('a', { href: dateLink.href }, [textNode(date)]));
+      }
+      if (context) {
+        parts.push(textNode(context));
+      }
+      if (parts.length > 0) {
+        const line = parts.flatMap((part, i) => (i === 0 ? [part] : [textNode(' · '), part]));
+        children.push(element('div', {}, line, ['p-rich_text_section']));
+      }
+    }
+    children.push(...blocks.flatMap((block) => toTree(block).children));
+    return element('blockquote', { 'data-stringify-type': 'quote' }, children, ['tabane-attachment']);
+  }
+
   function collect(messageEl) {
-    const blocks = Array.from(messageEl.querySelectorAll(SELECTORS.richText));
-    const root = { type: 'el', tag: 'div', attrs: {}, classes: [], children: blocks.flatMap((block) => toTree(block).children) };
+    const bodyBlocks = richTextIn(messageEl).filter((block) => !block.closest(SELECTORS.attachment));
+    const quotes = Array.from(messageEl.querySelectorAll(SELECTORS.attachment), attachmentToQuote).filter(Boolean);
+    const bodyChildren = quotes.length > 0 && isLinkOnly(bodyBlocks) ? [] : bodyBlocks.flatMap((block) => toTree(block).children);
+    const root = { type: 'el', tag: 'div', attrs: {}, classes: [], children: [...bodyChildren, ...quotes] };
     const timestamp = messageEl.querySelector(SELECTORS.timestamp);
     const meta = {
       sender: findSender(messageEl),
