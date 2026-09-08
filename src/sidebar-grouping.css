@@ -1,0 +1,25 @@
+.tabane-row {
+  display: inline;
+  white-space: nowrap;
+}
+
+/* Labels and glyphs keep a fixed weight so hidden labels stay the same width as the
+   visible one in the row above, even when Slack bolds an unread channel. */
+.tabane-label,
+.tabane-glyph {
+  font-weight: 400;
+}
+
+.tabane-label--hidden {
+  visibility: hidden;
+}
+
+.tabane-glyph {
+  display: inline-block;
+  margin: 0 0.15em 0 0.1em;
+  font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  line-height: 1;
+  white-space: pre;
+  transform: scaleY(1.45);
+  transform-origin: center;
+}

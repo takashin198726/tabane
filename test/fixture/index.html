@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>tabane fixture — fake Slack sidebar</title>
+<link rel="stylesheet" href="/src/sidebar-grouping.css">
+<style>
+  body { margin: 0; font: 15px/1.4 -apple-system, "Helvetica Neue", sans-serif; display: flex; gap: 24px; }
+  .sidebar { width: 260px; min-height: 100vh; background: #3f0e40; color: #cfc3cf; padding: 12px 0; }
+  [role="listitem"] { padding: 3px 16px; }
+  [role="listitem"].unread .p-channel_sidebar__name { color: #fff; font-weight: 700; }
+  [role="listitem"].header { color: #fff; font-weight: 700; margin-top: 8px; }
+  .p-channel_sidebar__name::before { content: "# "; opacity: .6; }
+  [data-qa-channel-sidebar-channel-type="im"] .p-channel_sidebar__name::before { content: "@ "; }
+  .p-channel_sidebar__name[data-qa=""]::before { content: ""; }
+  .controls { padding: 16px; }
+  .controls button { display: block; margin: 6px 0; }
+  pre { font-size: 12px; background: #f3f3f3; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="p-channel_sidebar__static_list">
+    <div class="c-virtual_list__scroll_container" id="list"></div>
+  </div>
+</div>
+<div class="controls">
+  <p>Fake Slack sidebar for exercising <code>src/sidebar-grouping.js</code> outside Chrome's extension runtime.</p>
+  <button id="overwrite">Slack overwrites a name (virtual-list row reuse)</button>
+  <button id="append">Append channel "proj-ops-c"</button>
+  <button id="remove">Remove "team-b" (team-a becomes alone)</button>
+  <button id="swap">Re-create list container (workspace switch)</button>
+  <button id="unread">Toggle unread (bold) on "proj-dev-frontend"</button>
+  <pre id="log"></pre>
+</div>
+<script>
+  // Minimal stand-in for the extension runtime.
+  window.chrome = { runtime: { getURL: (path) => '/' + path } };
+
+  const CHANNELS = [
+    ['general'], ['proj'], ['proj-dev-backend'], ['proj-dev-frontend'], ['proj-ops-a'], ['proj-ops-b'],
+    ['random'], ['team-a'], ['team-b'], ['solo-x'], ['x_y_z_1'], ['x_y_z_2'],
+    ['', 'header', 'Direct messages'], ['john-doe', 'im'], ['john-smith', 'im'],
+  ];
+
+  function makeItem(name, type = 'channel', headerText = '') {
+    const item = document.createElement('div');
+    item.setAttribute('role', 'listitem');
+    if (type === 'header') {
+      item.className = 'header';
+      item.textContent = headerText;
+      return item;
+    }
+    const ch = document.createElement('div');
+    ch.className = 'p-channel_sidebar__channel';
+    ch.setAttribute('data-qa-channel-sidebar-channel-type', type);
+    const nameEl = document.createElement('span');
+    nameEl.className = 'p-channel_sidebar__name';
+    nameEl.setAttribute('data-qa', `channel_sidebar_name_${name}`);
+    nameEl.textContent = name;
+    ch.append(nameEl);
+    item.append(ch);
+    return item;
+  }
+
+  function fill(list) {
+    list.replaceChildren(...CHANNELS.map((c) => makeItem(...c)));
+  }
+
+  const log = (msg) => { document.getElementById('log').textContent += msg + '\n'; };
+  const list = () => document.getElementById('list');
+  const nameEls = () => Array.from(document.querySelectorAll('.p-channel_sidebar__name'));
+
+  fill(list());
+
+  document.getElementById('overwrite').onclick = () => {
+    const el = nameEls().find((e) => e.dataset.tabaneRaw === 'proj-dev-backend');
+    el.setAttribute('data-qa', 'channel_sidebar_name_proj-dev-api');
+    el.textContent = 'proj-dev-api'; // what React does for a string child
+    log('overwrote proj-dev-backend -> proj-dev-api');
+  };
+  document.getElementById('append').onclick = () => {
+    list().insertBefore(makeItem('proj-ops-c'), list().children[6]);
+    log('appended proj-ops-c');
+  };
+  document.getElementById('remove').onclick = () => {
+    nameEls().find((e) => e.textContent.includes('team-b') || e.dataset.tabaneRaw === 'team-b').closest('[role="listitem"]').remove();
+    log('removed team-b');
+  };
+  document.getElementById('swap').onclick = () => {
+    const wrapper = document.querySelector('.p-channel_sidebar__static_list');
+    const fresh = wrapper.cloneNode(false);
+    const inner = document.createElement('div');
+    inner.className = 'c-virtual_list__scroll_container';
+    inner.id = 'list';
+    fresh.append(inner);
+    fill(inner);
+    wrapper.replaceWith(fresh);
+    log('re-created list container');
+  };
+  document.getElementById('unread').onclick = () => {
+    nameEls().find((e) => e.dataset.tabaneRaw === 'proj-dev-frontend').closest('[role="listitem"]').classList.toggle('unread');
+    log('toggled unread');
+  };
+</script>
+<script src="/src/sidebar-grouping.js"></script>
+</body>
+</html>

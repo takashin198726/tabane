@@ -1,0 +1,13 @@
+{
+  "name": "tabane",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension that bundles Slack sidebar channels into a multi-level tree by name prefix.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
