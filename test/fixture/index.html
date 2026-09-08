@@ -33,6 +33,7 @@
   blockquote.c-mrkdwn__quote { border-left: 3px solid #ccc; margin: 4px 0; padding-left: 8px; }
   .p-message_pane__unread_banner { background: #1264a3; color: #fff; padding: 4px 12px; font-size: 12px; }
   .thread { border-top: 1px solid #ddd; padding: 8px 16px; }
+  #thread-body { max-height: 160px; overflow: auto; }
   .p-flexpane_header { display: flex; align-items: center; gap: 6px; }
   .p-flexpane_header__primary { flex: 1; font-weight: 700; }
   .p-flexpane_header .c-icon_button { width: 28px; height: 28px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
@@ -121,13 +122,13 @@ timeout: 30</pre>
   </div>
   <div class="thread p-flexpane" data-qa="threads_flexpane">
     <div class="p-flexpane_header"><div class="p-flexpane_header__primary">スレッド</div><span><button class="c-button-unstyled c-icon_button" data-qa="secondary-header-more" aria-label="More">⋮</button></span><span><button class="c-button-unstyled c-icon_button" data-qa="close_flexpane" aria-label="Close">✕</button></span></div>
-    <div class="p-flexpane__body">
-      <div data-qa="message_container" class="c-message_kit__thread_message c-message_kit__thread_message--root">
+    <div class="p-flexpane__body c-scrollbar__hider" id="thread-body">
+      <div data-qa="message_container" class="c-message_kit__thread_message c-message_kit__thread_message--root" data-msg-ts="1788247844.332379">
         <span class="c-message__sender" data-qa="message_sender_name">takashin198726</span>
         <a class="c-link c-timestamp" href="https://example.slack.com/archives/C0BPUQ3TQJY/p1788247844332379" data-ts="1788247844.332379">16:30</a>
         <div class="p-rich_text_block"><div class="p-rich_text_section">みなさま、よろしくお願いします〜<br>・呼ばれたい名前<br>たかくら、のすけ</div></div>
       </div>
-      <div data-qa="message_container" class="c-message_kit__thread_message">
+      <div data-qa="message_container" class="c-message_kit__thread_message" data-msg-ts="1788254590.930529">
         <span class="c-message__sender" data-qa="message_sender_name">マエス（Hironobu Yoshida）</span>
         <a class="c-link c-timestamp" href="https://example.slack.com/archives/C0BPUQ3TQJY/p1788254590930529?thread_ts=1788247844.332379&amp;cid=C0BPUQ3TQJY" data-ts="1788254590.930529">18:23</a>
         <div class="p-rich_text_block"><div class="p-rich_text_section">素敵！通関統計って過ですね。</div></div>
@@ -166,8 +167,17 @@ timeout: 30</pre>
   }
   document.getElementById('list').replaceChildren(...CHANNELS.map((c) => makeItem(...c)));
 
+  // More thread replies than fit in the scroll box, so the thread copy has to scroll.
+  for (let i = 1; i <= 8; i++) {
+    const ts = `${1788260000 + i * 100}.000000`;
+    const m = document.createElement('div');
+    m.setAttribute('data-qa', 'message_container'); m.className = 'c-message_kit__thread_message'; m.setAttribute('data-msg-ts', ts);
+    m.innerHTML = `<span class="c-message__sender" data-qa="message_sender_name">reply-${i}</span> <a class="c-link c-timestamp" href="https://example.slack.com/archives/C1/p${ts.replace('.', '')}" data-ts="${ts}">t</a><div class="p-rich_text_block"><div class="p-rich_text_section">返信 ${i}</div></div>`;
+    document.getElementById('thread-body').append(m);
+  }
+
   const log = (msg) => { const el = document.getElementById('log'); el.textContent += msg + '\n'; el.scrollTop = el.scrollHeight; };
-  document.addEventListener('tabane:copied', (e) => { log('--- written: ' + e.detail.written + ' ---\n--- markdown ---\n' + e.detail.markdown + '\n--- html ---\n' + e.detail.html); });
+  document.addEventListener('tabane:copied', (e) => { log('--- written: ' + e.detail.written + (e.detail.thread ? ' thread count: ' + e.detail.count : '') + ' ---\n--- markdown ---\n' + e.detail.markdown + '\n--- html ---\n' + e.detail.html); });
 
   const hiddenCount = () => { document.getElementById('hidden-count').textContent = 'hidden by heuristic: ' + document.querySelectorAll('[data-tabane-noise]').length + ' / html classes: ' + document.documentElement.className; };
   setInterval(hiddenCount, 500);

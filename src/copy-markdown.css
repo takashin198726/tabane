@@ -14,3 +14,35 @@
 .tabane-copy-button--failed {
   color: #e01e5a !important;
 }
+
+.tabane-copy-thread-button--busy {
+  opacity: 0.5;
+  cursor: progress !important;
+}
+
+.tabane-copy-fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+}
+
+.tabane-copy-fallback > div {
+  width: min(720px, 90vw);
+  background: #fff;
+  color: #1d1c1d;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  font: 14px/1.5 -apple-system, "Helvetica Neue", "Hiragino Sans", sans-serif;
+}
+
+.tabane-copy-fallback textarea {
+  width: 100%;
+  height: 50vh;
+  box-sizing: border-box;
+  margin: 8px 0;
+  font: 13px/1.4 Menlo, Consolas, monospace;
+}

@@ -37,6 +37,10 @@
     threadHeader: '.p-flexpane_header',
     threadHeaderMore: '[data-qa="secondary-header-more"]',
     threadHeaderClose: '[data-qa="close_flexpane"]',
+    // Scroll container of the thread's virtual list.
+    threadScroller: '.c-scrollbar__hider',
+    // Unix timestamp attribute on a message container (also on a.c-timestamp as data-ts).
+    messageTsAttr: 'data-msg-ts',
   };
 
   const CLASS = {
@@ -46,9 +50,15 @@
     failed: 'tabane-copy-button--failed',
     threadItem: 'tabane-copy-thread-item',
     threadButton: 'tabane-copy-thread-button',
+    busy: 'tabane-copy-thread-button--busy',
+    fallback: 'tabane-copy-fallback',
   };
 
   const THREAD_POLL_MS = 1500;
+  // Slack's virtual list re-renders after a scroll event; this is how long that takes.
+  const SCROLL_SETTLE_MS = 600;
+  const MAX_SCROLL_STEPS = 300;
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const url = (path) => chrome.runtime.getURL(path);
   const [{ treeToMarkdown, treeToHtml, formatSourceHeader, sourceLineNode }, { loadSettings, watchSettings }] = await Promise.all([
@@ -203,25 +213,89 @@
 
   // ---- thread copy ------------------------------------------------------------------------
 
-  // Every message currently rendered in the thread pane (the list is virtualised, so very
-  // long threads only include what has been scrolled into view), each headed by its
-  // attribution line.
-  function collectThread(pane) {
-    const messages = Array.from(pane.querySelectorAll(SELECTORS.message));
-    const children = messages.flatMap((messageEl, i) => {
-      const { root, meta } = collect(messageEl);
+  // The thread pane is a virtual list: only the messages near the viewport exist in the DOM.
+  // Walk the scroller from top to bottom, collecting each message once by timestamp, then
+  // put the scroll position back. Slack only re-renders on an explicit scroll event.
+  async function collectThread(pane) {
+    const seen = new Map();
+    const gather = () => {
+      for (const messageEl of pane.querySelectorAll(SELECTORS.message)) {
+        const ts =
+          messageEl.getAttribute(SELECTORS.messageTsAttr) ??
+          messageEl.querySelector(SELECTORS.timestamp)?.dataset.ts ??
+          `unknown-${seen.size}`;
+        if (!seen.has(ts)) {
+          seen.set(ts, collect(messageEl));
+        }
+      }
+    };
+
+    gather();
+    const scroller = pane.querySelector(SELECTORS.threadScroller);
+    if (scroller) {
+      const original = scroller.scrollTop;
+      const scrollTo = async (top) => {
+        scroller.scrollTop = top;
+        scroller.dispatchEvent(new Event('scroll', { bubbles: true }));
+        await wait(SCROLL_SETTLE_MS);
+        gather();
+      };
+      await scrollTo(0);
+      for (let i = 0; i < MAX_SCROLL_STEPS; i += 1) {
+        const before = scroller.scrollTop;
+        await scrollTo(before + scroller.clientHeight * 0.9);
+        if (scroller.scrollTop === before) {
+          break;
+        }
+      }
+      await scrollTo(original);
+    }
+
+    const entries = Array.from(seen.entries()).sort(([a], [b]) => Number.parseFloat(a) - Number.parseFloat(b));
+    const children = entries.flatMap(([, { root, meta }], i) => [
       // The channel is the same for every reply; name it once, on the root message.
-      return [sourceLineNode(i === 0 ? meta : { ...meta, channel: '' }), ...root.children];
+      sourceLineNode(i === 0 ? meta : { ...meta, channel: '' }),
+      ...root.children,
+    ]);
+    return { type: 'el', tag: 'div', attrs: {}, classes: [], children, count: entries.length };
+  }
+
+  // Shown when the clipboard refuses the write (the user gesture has expired after a long
+  // scroll): the Markdown in a textarea, already selected, for a manual Cmd/Ctrl+C.
+  function showFallback(markdown) {
+    document.querySelector(`.${CLASS.fallback}`)?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = CLASS.fallback;
+    const box = document.createElement('div');
+    const note = document.createElement('p');
+    note.textContent = 'クリップボードに書き込めなかったので、内容を選択した状態で表示しています。Cmd/Ctrl+C でコピーしてください。';
+    const textarea = document.createElement('textarea');
+    textarea.value = markdown;
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = '閉じる';
+    close.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        overlay.remove();
+      }
     });
-    return { type: 'el', tag: 'div', attrs: {}, classes: [], children };
+    box.append(note, textarea, close);
+    overlay.append(box);
+    document.body.append(overlay);
+    textarea.focus();
+    textarea.select();
   }
 
   async function copyThread(pane) {
-    const root = collectThread(pane);
+    const root = await collectThread(pane);
     const markdown = treeToMarkdown(root);
     const html = treeToHtml(root);
     const written = await writeClipboard(markdown, html);
-    document.dispatchEvent(new CustomEvent('tabane:copied', { detail: { markdown, html, written, thread: true } }));
+    if (!written) {
+      showFallback(markdown);
+    }
+    document.dispatchEvent(new CustomEvent('tabane:copied', { detail: { markdown, html, written, thread: true, count: root.count } }));
     return written;
   }
 
@@ -274,16 +348,22 @@
     button.type = 'button';
     button.className = `c-button-unstyled c-icon_button ${CLASS.threadButton}`;
     button.setAttribute('aria-label', 'スレッド全体を Markdown でコピー');
-    button.title = 'スレッド全体を Markdown でコピー（読み込まれている返信まで）';
+    button.title = 'スレッド全体を Markdown でコピー（自動でスクロールして全件を集めます）';
     button.innerHTML = ICON;
     button.addEventListener('click', async (event) => {
       event.preventDefault();
       event.stopPropagation();
       const pane = button.closest(SELECTORS.threadPane);
-      if (!pane) {
+      if (!pane || button.classList.contains(CLASS.busy)) {
         return;
       }
-      const written = await copyThread(pane);
+      button.classList.add(CLASS.busy);
+      let written = false;
+      try {
+        written = await copyThread(pane);
+      } finally {
+        button.classList.remove(CLASS.busy);
+      }
       const state = written ? CLASS.done : CLASS.failed;
       button.classList.add(state);
       setTimeout(() => button.classList.remove(state), 1200);
