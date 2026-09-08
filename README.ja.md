@@ -29,7 +29,7 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 |---|---|---|
 | **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
-| **ワークスペース切替バー** – UA のプラットフォーム部を ChromeOS に書き換えて切替サイドバーを常時表示 | `app.slack.com` | [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) からの移植。未検証 |
+| **ワークスペース切替バー** – UA 文字列・`navigator.platform`・Client Hints を ChromeOS に偽装して切替サイドバーを常時表示 | `app.slack.com` | [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) からの移植。未検証 |
 
 3 機能とも常時 ON です。機能ごとの ON/OFF はロードマップにあります。
 
