@@ -51,6 +51,8 @@
     threadItem: 'tabane-copy-thread-item',
     threadButton: 'tabane-copy-thread-button',
     busy: 'tabane-copy-thread-button--busy',
+    ready: 'tabane-copy-thread-button--ready',
+    hint: 'tabane-copy-hint',
     fallback: 'tabane-copy-fallback',
   };
 
@@ -312,16 +314,16 @@
     textarea.select();
   }
 
+  // Gathers the thread and tries to write it. When the write is refused (the click is too
+  // old by then), the content is kept and the button asks for a second click, which is a
+  // fresh gesture. Returns { written, markdown, html }.
   async function copyThread(pane) {
     const root = await collectThread(pane);
     const markdown = treeToMarkdown(root);
     const html = treeToHtml(root);
     const written = await writeClipboard(markdown, html);
-    if (!written) {
-      showFallback(markdown);
-    }
     document.dispatchEvent(new CustomEvent('tabane:copied', { detail: { markdown, html, written, thread: true, count: root.count } }));
-    return written;
+    return { written, markdown, html };
   }
 
   // ---- toolbar button ---------------------------------------------------------------------
@@ -375,23 +377,65 @@
     button.setAttribute('aria-label', 'スレッド全体を Markdown でコピー');
     button.title = 'スレッド全体を Markdown でコピー（自動でスクロールして全件を集めます）';
     button.innerHTML = ICON;
+    let pending = null; // content gathered but not yet written; waits for a second click
+
+    const flash = (state) => {
+      button.classList.add(state);
+      setTimeout(() => button.classList.remove(state), 1200);
+    };
+    const setHint = (text) => {
+      wrapper.querySelector(`.${CLASS.hint}`)?.remove();
+      if (text) {
+        const hint = document.createElement('span');
+        hint.className = CLASS.hint;
+        hint.textContent = text;
+        wrapper.append(hint);
+      }
+    };
+
     button.addEventListener('click', async (event) => {
       event.preventDefault();
       event.stopPropagation();
+      if (button.classList.contains(CLASS.busy)) {
+        return;
+      }
+
+      // Second click: write what was gathered, inside this fresh gesture.
+      if (pending) {
+        const { markdown, html } = pending;
+        pending = null;
+        button.classList.remove(CLASS.ready);
+        setHint('');
+        const written = await writeClipboard(markdown, html);
+        flash(written ? CLASS.done : CLASS.failed);
+        if (!written) {
+          showFallback(markdown);
+        }
+        return;
+      }
+
       const pane = button.closest(SELECTORS.threadPane);
-      if (!pane || button.classList.contains(CLASS.busy)) {
+      if (!pane) {
         return;
       }
       button.classList.add(CLASS.busy);
-      let written = false;
+      let result = null;
       try {
-        written = await copyThread(pane);
+        result = await copyThread(pane);
       } finally {
         button.classList.remove(CLASS.busy);
       }
-      const state = written ? CLASS.done : CLASS.failed;
-      button.classList.add(state);
-      setTimeout(() => button.classList.remove(state), 1200);
+      if (!result) {
+        flash(CLASS.failed);
+        return;
+      }
+      if (result.written) {
+        flash(CLASS.done);
+        return;
+      }
+      pending = { markdown: result.markdown, html: result.html };
+      button.classList.add(CLASS.ready);
+      setHint('もう一度クリックでコピー');
     });
     wrapper.append(button);
     return wrapper;

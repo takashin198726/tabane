@@ -46,3 +46,23 @@
   margin: 8px 0;
   font: 13px/1.4 Menlo, Consolas, monospace;
 }
+
+.tabane-copy-thread-item {
+  align-items: center;
+  gap: 4px;
+}
+
+.tabane-copy-thread-button--ready {
+  color: #1264a3 !important;
+  animation: tabane-pulse 1s ease-in-out 3;
+}
+
+.tabane-copy-hint {
+  font-size: 12px;
+  color: #1264a3;
+  white-space: nowrap;
+}
+
+@keyframes tabane-pulse {
+  50% { opacity: 0.4; }
+}
