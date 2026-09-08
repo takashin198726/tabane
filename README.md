@@ -29,7 +29,7 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 
 | Feature | Where it runs | Status |
 |---|---|---|
-| **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels. Click a group's `┬` to fold it: the first row stays as `proj ▸ 5`, bold with a mention badge when the hidden rows have unreads; folds are remembered per workspace | `app.slack.com` | Grouping **verified on live Slack** (2026-09-08); folding verified against the fixture |
+| **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels. Click a group's `┬` to fold it: the first row stays as `proj ▸ 5`, bold with a mention badge when the hidden rows have unreads; folds are remembered per workspace | `app.slack.com` | Grouping and folding **verified on live Slack** (2026-09-08) |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
 | **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
 | **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink). Forwarded messages copy as an attributed quote, and a button in the thread pane header copies the whole thread with one attribution line per reply | `app.slack.com` | Message, thread and forwarded-message copy **verified on live Slack** (2026-09-08) |
@@ -123,7 +123,6 @@ Candidate features and the reasoning behind them are in
 [docs/feature-candidates.md](docs/feature-candidates.md) (Japanese).
 
 - Verify open-in-browser in a browser profile where Slack has not yet remembered "open in browser"
-- Verify group folding on live Slack
 - Userscript build for Tampermonkey
 - Chrome Web Store listing
 
