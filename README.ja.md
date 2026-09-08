@@ -30,7 +30,7 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 | **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
 | **ワークスペース切替バー** – Slack 自身が持つワークスペース列（ログイン中のワークスペースごとに 1 アイコン）を常時表示。ChromeOS の UA で全ワークスペースを列に載せ、CSS で隠された列を表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08、6 ワークスペース） |
-| **Markdown でコピー** – ホバーツールバーのボタンで、メッセージを GitHub 風 Markdown（`text/plain`）と HTML（`text/html`）の両方でクリップボードへ。Markdown エディタには Markdown として、Slack に貼り戻すと書式付きで入る。Shift+クリックで引用元行（投稿者・時刻・チャンネル・パーマリンク）付き。転送メッセージは帰属付きの引用になり、スレッド枠ヘッダのボタンでスレッド全体を返信ごとの帰属行付きでコピーできる | `app.slack.com` | 単体コピーとスレッド一括コピーは**実 Slack で動作確認済み**（2026-09-08、6 件のスレッド）。転送メッセージは fixture で検証 |
+| **Markdown でコピー** – ホバーツールバーのボタンで、メッセージを GitHub 風 Markdown（`text/plain`）と HTML（`text/html`）の両方でクリップボードへ。Markdown エディタには Markdown として、Slack に貼り戻すと書式付きで入る。Shift+クリックで引用元行（投稿者・時刻・チャンネル・パーマリンク）付き。転送メッセージは帰属付きの引用になり、スレッド枠ヘッダのボタンでスレッド全体を返信ごとの帰属行付きでコピーできる | `app.slack.com` | 単体・スレッド一括・転送メッセージのコピーとも**実 Slack で動作確認済み**（2026-09-08） |
 | **ノイズ除去** – トライアル／アップグレード／ヒントのバナーをヒューリスティック（バナーらしいクラス名 + 文言）で隠す。後から Slack が足す訴求にも効く。レールのタブ・ショートカット番号・ツールバーのボタン・未読バナーは項目ごとに ON/OFF | `app.slack.com` | ヒューリスティックは**実 Slack で動作確認済み**（Slack のヒントバナーを非表示）。トライアル・通知バナーは fixture で検証 |
 
 グルーピング・コピー・ノイズ除去・ワークスペース列はオプションページで ON/OFF できます（`chrome://extensions` →
@@ -109,7 +109,6 @@ DOM 層を確認する用途です。
 
 機能候補と選定理由は [docs/feature-candidates.md](docs/feature-candidates.md) にまとめています。
 
-- 転送メッセージのコピーを実 Slack で検証
 - ブラウザで開く を、Slack が「ブラウザで開く」を記憶していないプロファイルで検証
 - グループの折りたたみ（親行クリックで子行を畳む）
 - Tampermonkey 向け userscript ビルド
