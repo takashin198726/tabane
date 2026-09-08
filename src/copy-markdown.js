@@ -177,6 +177,28 @@
 
   // ---- clipboard --------------------------------------------------------------------------
 
+  // Writes through a synthetic copy event. Unlike navigator.clipboard this does not need a
+  // recent user gesture: the extension's clipboardWrite permission covers it, which matters
+  // for the thread copy, whose scrolling can outlive the click's activation window.
+  function writeViaCopyEvent(markdown, html) {
+    let handled = false;
+    const onCopy = (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      event.clipboardData.setData('text/plain', markdown);
+      event.clipboardData.setData('text/html', html);
+      handled = true;
+    };
+    window.addEventListener('copy', onCopy, { capture: true });
+    try {
+      return document.execCommand('copy') && handled;
+    } catch {
+      return false;
+    } finally {
+      window.removeEventListener('copy', onCopy, { capture: true });
+    }
+  }
+
   // Returns true when the clipboard accepted the content.
   async function writeClipboard(markdown, html) {
     try {
@@ -188,13 +210,16 @@
       ]);
       return true;
     } catch {
-      // Older Chrome, or the rich write was refused: fall back to plain Markdown.
+      // Refused (no recent gesture, or rich writes unsupported): try the other routes.
+    }
+    if (writeViaCopyEvent(markdown, html)) {
+      return true;
     }
     try {
       await navigator.clipboard.writeText(markdown);
       return true;
     } catch (error) {
-      console.warn('[tabane] clipboard write failed:', error);
+      console.warn('[tabane] clipboard write failed:', error?.name, error?.message);
       return false;
     }
   }
