@@ -32,8 +32,8 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 | **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
 | **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
-| **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink). Forwarded messages copy as an attributed quote, and a button in the thread pane header copies the whole thread with one attribution line per reply | `app.slack.com` | Message copy **verified on live Slack** (2026-09-08); forwarded messages and threads verified against the fixture |
-| **Noise removal** – hides trial / upgrade / hint banners by heuristic (banner-like class name + wording, so promotions Slack adds later are caught too), plus per-item toggles for rail tabs, shortcut hints, toolbar buttons and the unread banner | `app.slack.com` | Verified against the fixture; **not yet verified on live Slack** |
+| **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink). Forwarded messages copy as an attributed quote, and a button in the thread pane header copies the whole thread with one attribution line per reply | `app.slack.com` | Message copy and thread copy **verified on live Slack** (2026-09-08, a 6-message thread); forwarded messages verified against the fixture |
+| **Noise removal** – hides trial / upgrade / hint banners by heuristic (banner-like class name + wording, so promotions Slack adds later are caught too), plus per-item toggles for rail tabs, shortcut hints, toolbar buttons and the unread banner | `app.slack.com` | Heuristic **verified on live Slack** (hides Slack's hint banner); trial and notification banners verified against the fixture |
 
 Grouping, copy, noise removal and the workspace column are switched in the options page
 (`chrome://extensions` → tabane → **Details** → **Extension options**). Open-in-browser and the
@@ -116,7 +116,7 @@ layer without loading the extension.
 Candidate features and the reasoning behind them are in
 [docs/feature-candidates.md](docs/feature-candidates.md) (Japanese).
 
-- Verify forwarded-message and thread copy on live Slack
+- Verify forwarded-message copy on live Slack
 - Verify open-in-browser in a browser profile where Slack has not yet remembered "open in browser"
 - Group folding (click a parent row to collapse its children)
 - Userscript build for Tampermonkey
