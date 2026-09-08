@@ -27,9 +27,9 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 
 | 機能 | 動作する URL | 状態 |
 |---|---|---|
-| **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | `test/fixture/` の模擬サイドバーで検証済み。**実 Slack では未検証** |
+| **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
-| **ワークスペース切替バー** – UA に ` CrOS` を足して切替サイドバーを常時表示 | `app.slack.com` | [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) からの移植。未検証 |
+| **ワークスペース切替バー** – UA のプラットフォーム部を ChromeOS に書き換えて切替サイドバーを常時表示 | `app.slack.com` | [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) からの移植。未検証 |
 
 3 機能とも常時 ON です。機能ごとの ON/OFF はロードマップにあります。
 
@@ -94,7 +94,7 @@ DOM 層を確認する用途です。
 
 ## ロードマップ
 
-- 個人ワークスペースの実 Slack で 3 機能を検証
+- ブラウザで開く・ワークスペース切替バーを個人ワークスペースの実 Slack で検証
 - 機能ごとの ON/OFF（オプションページ）
 - Tampermonkey 向け userscript ビルド
 - Chrome Web Store への公開
@@ -104,7 +104,7 @@ DOM 層を確認する用途です。
 - [yamadashy/slack-channels-grouping](https://github.com/yamadashy/slack-channels-grouping) – 1 階層グルーピングの元祖と DOM セレクタ
 - [PR #149](https://github.com/yamadashy/slack-channels-grouping/pull/149) – 多階層グルーピングの提案
 - [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App)
-- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar)
+- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) and [Nevkontakte, "Workspace switcher bar for Slack in browser"](https://m.nevkontakte.com/articles/76e1af3/workspace-switcher-bar-for-slack-in-browser) – the ChromeOS user-agent trick
 
 ## ライセンス
 

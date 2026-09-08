@@ -29,9 +29,9 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 
 | Feature | Where it runs | Status |
 |---|---|---|
-| **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | Verified against the fixture in `test/fixture/`; **not yet verified on live Slack** |
+| **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
-| **Workspace switcher** – appends ` CrOS` to the user agent so Slack shows the workspace switcher sidebar | `app.slack.com` | Ported from [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar); not yet verified |
+| **Workspace switcher** – rewrites the platform part of the user agent to ChromeOS so Slack shows the workspace switcher sidebar | `app.slack.com` | Ported from [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar); not yet verified |
 
 All three are always on. Per-feature toggles are on the roadmap.
 
@@ -98,7 +98,7 @@ layer without loading the extension.
 
 ## Roadmap
 
-- Verify all three features on a live personal workspace
+- Verify open-in-browser and the workspace switcher on a live personal workspace
 - Per-feature on/off toggles (options page)
 - Userscript build for Tampermonkey
 - Chrome Web Store listing
@@ -108,7 +108,7 @@ layer without loading the extension.
 - [yamadashy/slack-channels-grouping](https://github.com/yamadashy/slack-channels-grouping) – the original one-level grouping and its DOM selectors
 - [PR #149](https://github.com/yamadashy/slack-channels-grouping/pull/149) – the multi-level grouping proposal
 - [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App)
-- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar)
+- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) and [Nevkontakte, "Workspace switcher bar for Slack in browser"](https://m.nevkontakte.com/articles/76e1af3/workspace-switcher-bar-for-slack-in-browser) – the ChromeOS user-agent trick
 
 ## License
 
