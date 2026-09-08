@@ -1,0 +1,18 @@
+/* Fixed rules: src/noise.js sets html.tabane-hide-<rule id> from the settings. Selectors here
+   must match NOISE_RULES in src/lib/noise.js. */
+html.tabane-hide-rail-activity [data-qa="tab_rail_activity_button"],
+html.tabane-hide-rail-files [data-qa="tab_rail_files_button"],
+html.tabane-hide-rail-later [data-qa="tab_rail_later_button"],
+html.tabane-hide-rail-agents .p-tab_rail__button:has(.p-tab_rail__button__label--agents-tools),
+html.tabane-hide-shortcut-hints .p-tab_rail__shortcut_hint,
+html.tabane-hide-shortcut-hints .p-team_sidebar__shortcut_hint,
+html.tabane-hide-action-later [data-qa="message-actions"] .c-message_actions__overflow_item:has([data-qa="later"]),
+html.tabane-hide-action-forward [data-qa="message-actions"] .c-message_actions__overflow_item:has([data-qa="share_message"]),
+html.tabane-hide-unread-banner .p-message_pane__unread_banner {
+  display: none !important;
+}
+
+/* Heuristic: elements src/noise.js classified as a trial / upsell / hint banner. */
+[data-tabane-noise] {
+  display: none !important;
+}

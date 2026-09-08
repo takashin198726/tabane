@@ -1,7 +1,7 @@
 # tabane
 
 A minimal MV3 Chrome extension that **bundles Slack sidebar channels into a multi-level tree**
-by their name prefix, plus two small quality-of-life fixes for using Slack in the browser.
+by their name prefix, plus a few quality-of-life fixes for using Slack in the browser.
 
 *tabane* (束ね) is Japanese for "a bundle".
 
@@ -32,8 +32,11 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 | **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
 | **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
+| **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink) | `app.slack.com` | Verified against the fixture; **not yet verified on live Slack** |
+| **Noise removal** – hides trial / upgrade / hint banners by heuristic (banner-like class name + wording, so promotions Slack adds later are caught too), plus per-item toggles for rail tabs, shortcut hints, toolbar buttons and the unread banner | `app.slack.com` | Verified against the fixture; **not yet verified on live Slack** |
 
-All three are always on. Per-feature toggles are on the roadmap.
+Grouping, copy and noise removal are switched in the options page (`chrome://extensions` → tabane →
+**Details** → **Extension options**). Open-in-browser and the workspace column are always on.
 
 ## Install
 
@@ -70,8 +73,9 @@ access, and are covered by [`test/grouping.test.js`](test/grouping.test.js).
 ## Slack DOM dependencies
 
 Every Slack extension dies the same way: Slack changes its markup and nobody updates the
-selectors. To keep that cheap, every selector is in one block, `SELECTORS`, at the top of
-[`src/sidebar-grouping.js`](src/sidebar-grouping.js), plus the rules in
+selectors. To keep that cheap, each content script keeps its selectors in one `SELECTORS`
+block at the top of the file, the noise rules live in `NOISE_RULES` in
+[`src/lib/noise.js`](src/lib/noise.js), and the workspace column is two rules in
 [`src/workspace-switcher.css`](src/workspace-switcher.css).
 
 | Key | Selector / attribute | Used for |
@@ -83,6 +87,11 @@ selectors. To keep that cheap, every selector is in one block, `SELECTORS`, at t
 | `nameKeyAttr` | `data-qa` on the name element | Rewritten by Slack when a virtual-list row is reused; used as a re-render trigger |
 | (CSS) | `.p-workspace_switcher_prototype` | Container of the workspace column; `display: none` in the browser until opened as a popover |
 | (CSS) | `.p-client_workspace_wrapper` | The rest of the client; shifted 60px right to sit beside the column |
+| copy `message` / `actionsGroup` | `[data-qa="message_container"]`, `[data-qa="message-actions"]` | A message and its hover toolbar, where the copy button is inserted |
+| copy `richText` | `.p-rich_text_block` with `data-stringify-*` attributes | Rendered message body; the attributes name bold/italic/code/pre/quote/list/emoji/mention |
+| copy `sender` / `timestamp` | `[data-qa="message_sender_name"]`, `a.c-timestamp` (`href`, `data-ts`) | Source line for Shift+click |
+| noise rules | `[data-qa="tab_rail_*_button"]`, `.p-tab_rail__shortcut_hint`, `.p-message_pane__unread_banner`, … | Fixed hide rules, see `NOISE_RULES` in `src/lib/noise.js` |
+| noise heuristic | `[class*="banner"]`, `[class*="upsell"]`, `[class*="trial"]`, … + wording | Candidates for the trial / upsell / hint detection |
 
 Assumption: Slack writes the channel name into `.p-channel_sidebar__name` as plain text
 (`textContent`), so when it re-renders a row our spans are replaced and the observer sees it.
@@ -104,8 +113,9 @@ layer without loading the extension.
 Candidate features and the reasoning behind them are in
 [docs/feature-candidates.md](docs/feature-candidates.md) (Japanese).
 
+- Verify copy-as-Markdown and noise removal on live Slack
 - Verify open-in-browser in a browser profile where Slack has not yet remembered "open in browser"
-- Per-feature on/off toggles (options page)
+- Group folding (click a parent row to collapse its children)
 - Userscript build for Tampermonkey
 - Chrome Web Store listing
 

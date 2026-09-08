@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { groupChannels } from '../src/grouping.js';
+import { groupChannels } from '../src/lib/grouping.js';
 
 const ch = (name, type = 'channel') => ({ name, type });
 const col = (label, showLabel, glyph) => ({ label, showLabel, glyph });

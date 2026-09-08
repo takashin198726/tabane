@@ -1,5 +1,5 @@
 // Content script (isolated world): reads channel names from the Slack sidebar, asks
-// src/grouping.js how to draw them, and rewrites the name elements accordingly.
+// src/lib/grouping.js how to draw them, and rewrites the name elements accordingly.
 //
 // Everything that depends on Slack's DOM lives in SELECTORS below. When Slack changes
 // its markup, this is the only block that should need to change.
@@ -30,11 +30,16 @@
     leaf: 'tabane-leaf',
   };
 
-  const MAX_DEPTH = 3;
   const DEBOUNCE_MS = 100;
   const POLL_MS = 1500;
 
-  const { groupChannels } = await import(chrome.runtime.getURL('src/grouping.js'));
+  const url = (path) => chrome.runtime.getURL(path);
+  const [{ groupChannels }, { loadSettings, watchSettings }] = await Promise.all([
+    import(url('src/lib/grouping.js')),
+    import(url('src/lib/settings.js')),
+  ]);
+
+  let settings = await loadSettings();
 
   const hasOwnMarkup = (nameEl) => nameEl.querySelector(`.${CLASS.row}`) !== null;
 
@@ -95,9 +100,17 @@
 
   function apply(list) {
     const entries = collect(list);
+    if (!settings.grouping.enabled) {
+      for (const { nameEl, name } of entries) {
+        if (nameEl) {
+          restore(nameEl, name);
+        }
+      }
+      return;
+    }
     const rows = groupChannels(
       entries.map(({ name, type }) => ({ name, type })),
-      { maxDepth: MAX_DEPTH },
+      { maxDepth: settings.grouping.maxDepth },
     );
     rows.forEach((row, i) => {
       const { nameEl } = entries[i];
@@ -167,4 +180,9 @@
 
   checkList();
   setInterval(checkList, POLL_MS);
+
+  watchSettings((next) => {
+    settings = next;
+    schedule();
+  });
 })();

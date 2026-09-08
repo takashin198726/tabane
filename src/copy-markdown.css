@@ -1,0 +1,11 @@
+.tabane-copy-button svg {
+  display: block;
+}
+
+.tabane-copy-button--done {
+  color: #2bac76 !important;
+}
+
+.tabane-copy-button--failed {
+  color: #e01e5a !important;
+}

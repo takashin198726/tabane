@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>tabane 設定</title>
+<style>
+  body { font: 14px/1.6 -apple-system, "Helvetica Neue", "Hiragino Sans", sans-serif; margin: 0; padding: 16px 20px; min-width: 360px; color: #1d1c1d; }
+  h1 { font-size: 16px; margin: 0 0 12px; }
+  h2 { font-size: 13px; margin: 18px 0 6px; color: #616061; text-transform: uppercase; letter-spacing: .04em; }
+  label { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  label.sub { padding-left: 24px; }
+  select { margin-left: 4px; }
+  p.note { color: #616061; font-size: 12px; margin: 6px 0 0; }
+  fieldset { border: 0; padding: 0; margin: 0; }
+  fieldset:disabled { opacity: .5; }
+</style>
+</head>
+<body>
+<h1>tabane</h1>
+
+<h2>サイドバー</h2>
+<label><input type="checkbox" data-path="grouping.enabled"> 接頭辞でチャンネルをツリー表示する</label>
+<label class="sub">ネストの深さ
+  <select data-path="grouping.maxDepth" data-type="number">
+    <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+  </select>
+</label>
+
+<h2>メッセージ</h2>
+<label><input type="checkbox" data-path="copyMarkdown.enabled"> ホバーツールバーに「Markdown でコピー」を追加する</label>
+<p class="note">クリックで本文、Shift+クリックで引用元（投稿者・時刻・チャンネル・リンク）付き。Slack に貼り戻すと書式が保たれます。</p>
+
+<h2>ノイズ除去</h2>
+<label><input type="checkbox" data-path="noise.enabled"> ノイズ除去を使う</label>
+<fieldset id="noise-fieldset">
+  <label class="sub"><input type="checkbox" data-path="noise.heuristic"> トライアル・アップグレード・ヒントのバナーを自動で隠す（新しい訴求にも対応）</label>
+  <div id="noise-rules"></div>
+</fieldset>
+
+<h2>常時 ON</h2>
+<p class="note">「ブラウザで開く」と「ワークスペース切替列の常時表示」は設定に関係なく動きます。切りたい場合は拡張ごと無効にしてください。</p>
+
+<script type="module" src="options.js"></script>
+</body>
+</html>

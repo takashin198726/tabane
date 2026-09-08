@@ -1,7 +1,7 @@
 # tabane（束ね）
 
 Slack のサイドバーのチャンネルを、名前の接頭辞で**多階層のツリーにまとめる** MV3 Chrome 拡張です。
-あわせて、ブラウザで Slack を使うときの小さな不便を 2 つ直します。
+あわせて、ブラウザで Slack を使うときの小さな不便をいくつか直します。
 
 English version: [README.md](README.md)
 
@@ -30,8 +30,11 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 | **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
 | **ワークスペース切替バー** – Slack 自身が持つワークスペース列（ログイン中のワークスペースごとに 1 アイコン）を常時表示。ChromeOS の UA で全ワークスペースを列に載せ、CSS で隠された列を表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08、6 ワークスペース） |
+| **Markdown でコピー** – ホバーツールバーのボタンで、メッセージを GitHub 風 Markdown（`text/plain`）と HTML（`text/html`）の両方でクリップボードへ。Markdown エディタには Markdown として、Slack に貼り戻すと書式付きで入る。Shift+クリックで引用元行（投稿者・時刻・チャンネル・パーマリンク）付き | `app.slack.com` | fixture で検証済み。**実 Slack では未検証** |
+| **ノイズ除去** – トライアル／アップグレード／ヒントのバナーをヒューリスティック（バナーらしいクラス名 + 文言）で隠す。後から Slack が足す訴求にも効く。レールのタブ・ショートカット番号・ツールバーのボタン・未読バナーは項目ごとに ON/OFF | `app.slack.com` | fixture で検証済み。**実 Slack では未検証** |
 
-3 機能とも常時 ON です。機能ごとの ON/OFF はロードマップにあります。
+グルーピング・コピー・ノイズ除去はオプションページで ON/OFF できます（`chrome://extensions` → tabane →
+**詳細** → **拡張機能のオプション**）。「ブラウザで開く」とワークスペース列は常時 ON です。
 
 ## インストール
 
@@ -66,8 +69,9 @@ Chrome 111 以降が必要です（`"world": "MAIN"` のコンテンツスクリ
 ## Slack DOM への依存
 
 Slack 拡張の死因はいつも同じで、Slack がマークアップを変え、誰もセレクタを直さないことです。
-追従を安くするため、セレクタは [`src/sidebar-grouping.js`](src/sidebar-grouping.js) 冒頭の
-`SELECTORS` ブロックと、[`src/workspace-switcher.css`](src/workspace-switcher.css) のルールに集約しています。
+追従を安くするため、各コンテンツスクリプトはセレクタを冒頭の `SELECTORS` ブロックに集約し、
+ノイズ除去のルールは [`src/lib/noise.js`](src/lib/noise.js) の `NOISE_RULES`、ワークスペース列は
+[`src/workspace-switcher.css`](src/workspace-switcher.css) の 2 ルールにまとめています。
 
 | キー | セレクタ / 属性 | 用途 |
 |---|---|---|
@@ -78,6 +82,11 @@ Slack 拡張の死因はいつも同じで、Slack がマークアップを変�
 | `nameKeyAttr` | name 要素の `data-qa` | 仮想リストの行が別チャンネルに再利用されると Slack が書き換える。再描画のトリガに使用 |
 | （CSS） | `.p-workspace_switcher_prototype` | ワークスペース列のコンテナ。ブラウザでは `display: none` で、ポップオーバーとして開くまで隠れている |
 | （CSS） | `.p-client_workspace_wrapper` | クライアント本体。列の横に並ぶよう 60px 右にずらす |
+| copy `message` / `actionsGroup` | `[data-qa="message_container"]`, `[data-qa="message-actions"]` | メッセージとホバーツールバー。ここにコピーボタンを差し込む |
+| copy `richText` | `.p-rich_text_block` と `data-stringify-*` 属性 | 描画済みの本文。属性が太字・斜体・コード・引用・リスト・絵文字・メンションを表す |
+| copy `sender` / `timestamp` | `[data-qa="message_sender_name"]`, `a.c-timestamp`（`href`, `data-ts`） | Shift+クリック時の引用元行 |
+| noise rules | `[data-qa="tab_rail_*_button"]`, `.p-tab_rail__shortcut_hint`, `.p-message_pane__unread_banner` など | 固定の非表示ルール。`src/lib/noise.js` の `NOISE_RULES` |
+| noise heuristic | `[class*="banner"]`, `[class*="upsell"]`, `[class*="trial"]` など + 文言 | トライアル／訴求／ヒントの判定対象 |
 
 前提: Slack はチャンネル名を `.p-channel_sidebar__name` にプレーンテキスト（`textContent`）で
 書き込む。そのため行が再描画されると当拡張の span は置き換えられ、observer が検知できる。
@@ -98,8 +107,9 @@ DOM 層を確認する用途です。
 
 機能候補と選定理由は [docs/feature-candidates.md](docs/feature-candidates.md) にまとめています。
 
+- Markdown コピーとノイズ除去を実 Slack で検証
 - ブラウザで開く を、Slack が「ブラウザで開く」を記憶していないプロファイルで検証
-- 機能ごとの ON/OFF（オプションページ）
+- グループの折りたたみ（親行クリックで子行を畳む）
 - Tampermonkey 向け userscript ビルド
 - Chrome Web Store への公開
 
