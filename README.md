@@ -101,6 +101,9 @@ layer without loading the extension.
 
 ## Roadmap
 
+Candidate features and the reasoning behind them are in
+[docs/feature-candidates.md](docs/feature-candidates.md) (Japanese).
+
 - Verify open-in-browser in a browser profile where Slack has not yet remembered "open in browser"
 - Per-feature on/off toggles (options page)
 - Userscript build for Tampermonkey

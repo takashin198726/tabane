@@ -96,6 +96,8 @@ DOM 層を確認する用途です。
 
 ## ロードマップ
 
+機能候補と選定理由は [docs/feature-candidates.md](docs/feature-candidates.md) にまとめています。
+
 - ブラウザで開く を、Slack が「ブラウザで開く」を記憶していないプロファイルで検証
 - 機能ごとの ON/OFF（オプションページ）
 - Tampermonkey 向け userscript ビルド
