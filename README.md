@@ -31,7 +31,7 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 |---|---|---|
 | **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
-| **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible instead of hidden behind a popover | `app.slack.com` | **Verified on live Slack** (2026-09-08) |
+| **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | Column and layout verified on live Slack (2026-09-08); full combination pending confirmation |
 
 All three are always on. Per-feature toggles are on the roadmap.
 
@@ -40,6 +40,8 @@ All three are always on. Per-feature toggles are on the roadmap.
 1. Open `chrome://extensions`
 2. Turn on **Developer mode** (top right)
 3. **Load unpacked** → select this directory
+
+Requires Chrome 111 or later (`"world": "MAIN"` content scripts).
 
 ### Where to use it
 
@@ -69,7 +71,7 @@ access, and are covered by [`test/grouping.test.js`](test/grouping.test.js).
 
 Every Slack extension dies the same way: Slack changes its markup and nobody updates the
 selectors. To keep that cheap, every selector is in one block, `SELECTORS`, at the top of
-[`src/sidebar-grouping.js`](src/sidebar-grouping.js), plus one rule in
+[`src/sidebar-grouping.js`](src/sidebar-grouping.js), plus the rules in
 [`src/workspace-switcher.css`](src/workspace-switcher.css).
 
 | Key | Selector / attribute | Used for |
@@ -80,6 +82,7 @@ selectors. To keep that cheap, every selector is in one block, `SELECTORS`, at t
 | `name` | `.p-channel_sidebar__name` | Element whose text is the channel name |
 | `nameKeyAttr` | `data-qa` on the name element | Rewritten by Slack when a virtual-list row is reused; used as a re-render trigger |
 | (CSS) | `.p-workspace_switcher_prototype` | Container of the workspace column; `display: none` in the browser until opened as a popover |
+| (CSS) | `.p-client_workspace_wrapper` | The rest of the client; shifted 60px right to sit beside the column |
 
 Assumption: Slack writes the channel name into `.p-channel_sidebar__name` as plain text
 (`textContent`), so when it re-renders a row our spans are replaced and the observer sees it.
@@ -108,7 +111,7 @@ layer without loading the extension.
 - [yamadashy/slack-channels-grouping](https://github.com/yamadashy/slack-channels-grouping) – the original one-level grouping and its DOM selectors
 - [PR #149](https://github.com/yamadashy/slack-channels-grouping/pull/149) – the multi-level grouping proposal
 - [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App)
-- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) and [Nevkontakte, "Workspace switcher bar for Slack in browser"](https://m.nevkontakte.com/articles/76e1af3/workspace-switcher-bar-for-slack-in-browser) – the ChromeOS user-agent trick. As of 2026-09 it no longer has any effect: Slack renders the column for every browser but hides it behind a popover, so tabane unhides it with CSS instead
+- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) and [Nevkontakte, "Workspace switcher bar for Slack in browser"](https://m.nevkontakte.com/articles/76e1af3/workspace-switcher-bar-for-slack-in-browser) – the ChromeOS user-agent trick. As of 2026-09 it is necessary but no longer sufficient: it makes Slack list every workspace, but the column stays hidden behind a popover, so tabane also unhides it with CSS
 
 ## License
 

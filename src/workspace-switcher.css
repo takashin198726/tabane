@@ -1,8 +1,20 @@
-/* Slack still renders its workspace switcher column (.p-team_sidebar with one item per
-   signed-in workspace) in the browser, but wraps it in a container that is display:none and
-   only opened as a popover from the workspace button. Keep that container open so the column
-   is always visible, the way the desktop app shows it. Verified on live Slack 2026-09-08. */
+/* Slack renders its workspace switcher column (.p-team_sidebar) in the browser too, but
+   wraps it in a container that is display:none and only opened as a popover from the
+   workspace button. Keep that container open as a fixed 60px column on the left and shift
+   the rest of the client beside it. The container is float:left with a full-height box, so
+   without the position/margin rules the workspace would be pushed below it.
+   Which workspaces appear in the column is decided by workspace-switcher.js (ChromeOS UA);
+   without it Slack lists only the current one. */
 .p-workspace_switcher_prototype {
   display: block !important;
   opacity: 1 !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100% !important;
+}
+
+.p-client_workspace_wrapper {
+  margin-left: 60px !important;
+  width: calc(100% - 60px) !important;
 }
