@@ -1,0 +1,8 @@
+/* Slack still renders its workspace switcher column (.p-team_sidebar with one item per
+   signed-in workspace) in the browser, but wraps it in a container that is display:none and
+   only opened as a popover from the workspace button. Keep that container open so the column
+   is always visible, the way the desktop app shows it. Verified on live Slack 2026-09-08. */
+.p-workspace_switcher_prototype {
+  display: block !important;
+  opacity: 1 !important;
+}

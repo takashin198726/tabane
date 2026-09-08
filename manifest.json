@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "tabane",
   "version": "0.1.0",
-  "minimum_chrome_version": "111",
-  "description": "Bundle Slack sidebar channels into a multi-level tree by name prefix. Also opens Slack links in the browser and keeps the workspace switcher visible.",
+  "minimum_chrome_version": "88",
+  "description": "Bundle Slack sidebar channels into a multi-level tree by name prefix. Also opens Slack links in the browser and keeps the workspace switcher column visible.",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -12,27 +12,45 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://app.slack.com/*"],
-      "js": ["src/sidebar-grouping.js"],
-      "css": ["src/sidebar-grouping.css"],
+      "matches": [
+        "https://app.slack.com/*"
+      ],
+      "js": [
+        "src/sidebar-grouping.js"
+      ],
+      "css": [
+        "src/sidebar-grouping.css"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://*.slack.com/archives/*", "https://*.slack.com/ssb/redirect*"],
-      "js": ["src/open-in-browser.js"],
+      "matches": [
+        "https://*.slack.com/archives/*",
+        "https://*.slack.com/ssb/redirect*"
+      ],
+      "js": [
+        "src/open-in-browser.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://app.slack.com/*"],
-      "js": ["src/workspace-switcher.js"],
-      "run_at": "document_start",
-      "world": "MAIN"
+      "matches": [
+        "https://app.slack.com/*"
+      ],
+      "css": [
+        "src/workspace-switcher.css"
+      ],
+      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["src/grouping.js"],
-      "matches": ["https://app.slack.com/*"]
+      "resources": [
+        "src/grouping.js"
+      ],
+      "matches": [
+        "https://app.slack.com/*"
+      ]
     }
   ]
 }

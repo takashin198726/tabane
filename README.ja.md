@@ -29,7 +29,7 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 |---|---|---|
 | **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
-| **ワークスペース切替バー** – UA 文字列・`navigator.platform`・Client Hints を ChromeOS に偽装して切替サイドバーを常時表示 | `app.slack.com` | [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) からの移植。未検証 |
+| **ワークスペース切替バー** – Slack 自身が持つワークスペース列（ログイン中のワークスペースごとに 1 アイコン）を、ポップオーバーに隠さず常時表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08） |
 
 3 機能とも常時 ON です。機能ごとの ON/OFF はロードマップにあります。
 
@@ -38,8 +38,6 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 1. `chrome://extensions` を開く
 2. 右上の **デベロッパーモード** を ON
 3. **パッケージ化されていない拡張機能を読み込む** → このディレクトリを選択
-
-Chrome 111 以降が必要です（`"world": "MAIN"` のコンテンツスクリプトを使うため）。
 
 ### どこで使うか
 
@@ -67,7 +65,7 @@ Chrome 111 以降が必要です（`"world": "MAIN"` のコンテンツスクリ
 
 Slack 拡張の死因はいつも同じで、Slack がマークアップを変え、誰もセレクタを直さないことです。
 追従を安くするため、セレクタは [`src/sidebar-grouping.js`](src/sidebar-grouping.js) 冒頭の
-`SELECTORS` ブロックに集約しています。
+`SELECTORS` ブロックと、[`src/workspace-switcher.css`](src/workspace-switcher.css) の 1 ルールに集約しています。
 
 | キー | セレクタ / 属性 | 用途 |
 |---|---|---|
@@ -76,6 +74,7 @@ Slack 拡張の死因はいつも同じで、Slack がマークアップを変�
 | `channel` + `channelTypeAttr` | `.p-channel_sidebar__channel[data-qa-channel-sidebar-channel-type]` | `channel` / `private` / `im` / `mpim` |
 | `name` | `.p-channel_sidebar__name` | チャンネル名のテキストを持つ要素 |
 | `nameKeyAttr` | name 要素の `data-qa` | 仮想リストの行が別チャンネルに再利用されると Slack が書き換える。再描画のトリガに使用 |
+| （CSS） | `.p-workspace_switcher_prototype` | ワークスペース列のコンテナ。ブラウザでは `display: none` で、ポップオーバーとして開くまで隠れている |
 
 前提: Slack はチャンネル名を `.p-channel_sidebar__name` にプレーンテキスト（`textContent`）で
 書き込む。そのため行が再描画されると当拡張の span は置き換えられ、observer が検知できる。
@@ -94,7 +93,7 @@ DOM 層を確認する用途です。
 
 ## ロードマップ
 
-- ブラウザで開く・ワークスペース切替バーを個人ワークスペースの実 Slack で検証
+- ブラウザで開く を、Slack が「ブラウザで開く」を記憶していないプロファイルで検証
 - 機能ごとの ON/OFF（オプションページ）
 - Tampermonkey 向け userscript ビルド
 - Chrome Web Store への公開
@@ -104,7 +103,7 @@ DOM 層を確認する用途です。
 - [yamadashy/slack-channels-grouping](https://github.com/yamadashy/slack-channels-grouping) – 1 階層グルーピングの元祖と DOM セレクタ
 - [PR #149](https://github.com/yamadashy/slack-channels-grouping/pull/149) – 多階層グルーピングの提案
 - [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App)
-- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar) and [Nevkontakte, "Workspace switcher bar for Slack in browser"](https://m.nevkontakte.com/articles/76e1af3/workspace-switcher-bar-for-slack-in-browser) – the ChromeOS user-agent trick
+- [leoluk/slack-workspace-sidebar](https://github.com/leoluk/slack-workspace-sidebar)、[Nevkontakte「Workspace switcher bar for Slack in browser」](https://m.nevkontakte.com/articles/76e1af3/workspace-switcher-bar-for-slack-in-browser) – ChromeOS への UA 偽装。2026-09 時点では効果がない（Slack はどのブラウザにも列を描画したうえでポップオーバーに隠しているため、tabane は CSS で表示している）
 
 ## ライセンス
 
