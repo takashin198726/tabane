@@ -31,7 +31,7 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 |---|---|---|
 | **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
-| **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | Column and layout verified on live Slack (2026-09-08); full combination pending confirmation |
+| **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
 
 All three are always on. Per-feature toggles are on the roadmap.
 
