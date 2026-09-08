@@ -30,11 +30,11 @@ Draft で止まっています。本リポジトリはネストを中心機能�
 | **サイドバーのグルーピング** – `-` / `_` 区切りの接頭辞で最大 3 階層のツリー表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08）。`test/fixture/` の模擬サイドバーでも検証 |
 | **ブラウザで開く** – デスクトップアプリを待たず「ブラウザで Slack を使う」リンクを踏む | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App) からの移植。未検証 |
 | **ワークスペース切替バー** – Slack 自身が持つワークスペース列（ログイン中のワークスペースごとに 1 アイコン）を常時表示。ChromeOS の UA で全ワークスペースを列に載せ、CSS で隠された列を表示 | `app.slack.com` | **実 Slack で動作確認済み**（2026-09-08、6 ワークスペース） |
-| **Markdown でコピー** – ホバーツールバーのボタンで、メッセージを GitHub 風 Markdown（`text/plain`）と HTML（`text/html`）の両方でクリップボードへ。Markdown エディタには Markdown として、Slack に貼り戻すと書式付きで入る。Shift+クリックで引用元行（投稿者・時刻・チャンネル・パーマリンク）付き | `app.slack.com` | fixture で検証済み。**実 Slack では未検証** |
+| **Markdown でコピー** – ホバーツールバーのボタンで、メッセージを GitHub 風 Markdown（`text/plain`）と HTML（`text/html`）の両方でクリップボードへ。Markdown エディタには Markdown として、Slack に貼り戻すと書式付きで入る。Shift+クリックで引用元行（投稿者・時刻・チャンネル・パーマリンク）付き。転送メッセージは帰属付きの引用になり、スレッド枠ヘッダのボタンでスレッド全体を返信ごとの帰属行付きでコピーできる | `app.slack.com` | 単体コピーは**実 Slack で動作確認済み**（2026-09-08）。転送メッセージとスレッドは fixture で検証 |
 | **ノイズ除去** – トライアル／アップグレード／ヒントのバナーをヒューリスティック（バナーらしいクラス名 + 文言）で隠す。後から Slack が足す訴求にも効く。レールのタブ・ショートカット番号・ツールバーのボタン・未読バナーは項目ごとに ON/OFF | `app.slack.com` | fixture で検証済み。**実 Slack では未検証** |
 
-グルーピング・コピー・ノイズ除去はオプションページで ON/OFF できます（`chrome://extensions` → tabane →
-**詳細** → **拡張機能のオプション**）。「ブラウザで開く」とワークスペース列は常時 ON です。
+グルーピング・コピー・ノイズ除去・ワークスペース列はオプションページで ON/OFF できます（`chrome://extensions` →
+tabane → **詳細** → **拡張機能のオプション**）。「ブラウザで開く」と ChromeOS 偽装は常時 ON です。
 
 ## インストール
 
@@ -85,6 +85,8 @@ Slack 拡張の死因はいつも同じで、Slack がマークアップを変�
 | copy `message` / `actionsGroup` | `[data-qa="message_container"]`, `[data-qa="message-actions"]` | メッセージとホバーツールバー。ここにコピーボタンを差し込む |
 | copy `richText` | `.p-rich_text_block` と `data-stringify-*` 属性 | 描画済みの本文。属性が太字・斜体・コード・引用・リスト・絵文字・メンションを表す |
 | copy `sender` / `timestamp` | `[data-qa="message_sender_name"]`, `a.c-timestamp`（`href`, `data-ts`） | Shift+クリック時の引用元行 |
+| copy `attachment` / `forwardedCard` | `.c-message_attachment`, `[data-qa="forwarded_message_card"]`（`[class^="byline"]`, `[class^="context"]`） | 転送メッセージ。投稿者・日付・場所付きの引用にする |
+| copy `threadPane` / `threadHeader` | `[data-qa="threads_flexpane"]`, `.p-flexpane_header`, `[data-qa="secondary-header-more"]` | スレッド枠。「その他」の前にスレッドコピーのボタンを置く |
 | noise rules | `[data-qa="tab_rail_*_button"]`, `.p-tab_rail__shortcut_hint`, `.p-message_pane__unread_banner` など | 固定の非表示ルール。`src/lib/noise.js` の `NOISE_RULES` |
 | noise heuristic | `[class*="banner"]`, `[class*="upsell"]`, `[class*="trial"]` など + 文言 | トライアル／訴求／ヒントの判定対象 |
 
@@ -107,7 +109,7 @@ DOM 層を確認する用途です。
 
 機能候補と選定理由は [docs/feature-candidates.md](docs/feature-candidates.md) にまとめています。
 
-- Markdown コピーとノイズ除去を実 Slack で検証
+- 転送メッセージとスレッドのコピーを実 Slack で検証
 - ブラウザで開く を、Slack が「ブラウザで開く」を記憶していないプロファイルで検証
 - グループの折りたたみ（親行クリックで子行を畳む）
 - Tampermonkey 向け userscript ビルド

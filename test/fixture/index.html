@@ -32,6 +32,10 @@
   pre.c-mrkdwn__pre { background: #f3f3f3; padding: 6px; border: 1px solid #ddd; }
   blockquote.c-mrkdwn__quote { border-left: 3px solid #ccc; margin: 4px 0; padding-left: 8px; }
   .p-message_pane__unread_banner { background: #1264a3; color: #fff; padding: 4px 12px; font-size: 12px; }
+  .thread { border-top: 1px solid #ddd; padding: 8px 16px; }
+  .p-flexpane_header { display: flex; align-items: center; gap: 6px; }
+  .p-flexpane_header__primary { flex: 1; font-weight: 700; }
+  .p-flexpane_header .c-icon_button { width: 28px; height: 28px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
   .controls { padding: 12px 16px; border-top: 1px solid #ddd; font-size: 13px; }
   .controls button, .controls label { margin-right: 10px; }
   pre#log { font-size: 12px; background: #f3f3f3; padding: 8px; max-height: 240px; overflow: auto; white-space: pre-wrap; }
@@ -112,6 +116,21 @@ timeout: 30</pre>
       <div class="p-rich_text_block"><div class="p-rich_text_section">続き（送信者なしの連投）。we should upgrade to Pro this quarter.</div></div>
       <div class="c-message_actions__group" data-qa="message-actions" role="group">
         <div class="c-message_actions__overflow_item"><button class="c-message_actions__button" data-qa="more_message_actions" aria-label="More">⋯</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="thread p-flexpane" data-qa="threads_flexpane">
+    <div class="p-flexpane_header"><div class="p-flexpane_header__primary">スレッド</div><span><button class="c-button-unstyled c-icon_button" data-qa="secondary-header-more" aria-label="More">⋮</button></span><span><button class="c-button-unstyled c-icon_button" data-qa="close_flexpane" aria-label="Close">✕</button></span></div>
+    <div class="p-flexpane__body">
+      <div data-qa="message_container" class="c-message_kit__thread_message c-message_kit__thread_message--root">
+        <span class="c-message__sender" data-qa="message_sender_name">takashin198726</span>
+        <a class="c-link c-timestamp" href="https://example.slack.com/archives/C0BPUQ3TQJY/p1788247844332379" data-ts="1788247844.332379">16:30</a>
+        <div class="p-rich_text_block"><div class="p-rich_text_section">みなさま、よろしくお願いします〜<br>・呼ばれたい名前<br>たかくら、のすけ</div></div>
+      </div>
+      <div data-qa="message_container" class="c-message_kit__thread_message">
+        <span class="c-message__sender" data-qa="message_sender_name">マエス（Hironobu Yoshida）</span>
+        <a class="c-link c-timestamp" href="https://example.slack.com/archives/C0BPUQ3TQJY/p1788254590930529?thread_ts=1788247844.332379&amp;cid=C0BPUQ3TQJY" data-ts="1788254590.930529">18:23</a>
+        <div class="p-rich_text_block"><div class="p-rich_text_section">素敵！通関統計って過ですね。</div></div>
       </div>
     </div>
   </div>

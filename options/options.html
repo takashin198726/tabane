@@ -28,7 +28,7 @@
 
 <h2>メッセージ</h2>
 <label><input type="checkbox" data-path="copyMarkdown.enabled"> ホバーツールバーに「Markdown でコピー」を追加する</label>
-<p class="note">クリックで本文、Shift+クリックで引用元（投稿者・時刻・チャンネル・リンク）付き。Slack に貼り戻すと書式が保たれます。</p>
+<p class="note">クリックで本文、Shift+クリックで引用元（投稿者・時刻・チャンネル・リンク）付き。スレッド枠のヘッダにはスレッド全体をコピーするボタンが付きます。Slack に貼り戻すと書式が保たれます。</p>
 
 <h2>ノイズ除去</h2>
 <label><input type="checkbox" data-path="noise.enabled"> ノイズ除去を使う</label>
@@ -37,8 +37,12 @@
   <div id="noise-rules"></div>
 </fieldset>
 
+<h2>ワークスペース</h2>
+<label><input type="checkbox" data-path="workspaceSwitcher.column"> 左端にワークスペース列を常時表示する</label>
+<p class="note">OFF にすると列の分だけ本文とスレッド枠が広がります。ワークスペースはこれまで通り左上のアイコンから切り替えられます。</p>
+
 <h2>常時 ON</h2>
-<p class="note">「ブラウザで開く」と「ワークスペース切替列の常時表示」は設定に関係なく動きます。切りたい場合は拡張ごと無効にしてください。</p>
+<p class="note">「ブラウザで開く」と、ワークスペース列に全ワークスペースを載せるための ChromeOS 偽装は設定に関係なく動きます。切りたい場合は拡張ごと無効にしてください。</p>
 
 <script type="module" src="options.js"></script>
 </body>

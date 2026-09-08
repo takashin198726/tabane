@@ -29,3 +29,8 @@ test('merging never mutates the defaults', () => {
   merged.grouping.maxDepth = 99;
   assert.equal(JSON.stringify(DEFAULTS), before);
 });
+
+test('the workspace column is on by default', () => {
+  assert.equal(DEFAULTS.workspaceSwitcher.column, true);
+  assert.equal(mergeSettings({ workspaceSwitcher: { column: false } }).workspaceSwitcher.column, false);
+});

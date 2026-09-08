@@ -266,3 +266,21 @@ export function formatSourceHeader({ sender, timestamp, channel, permalink }) {
   const htmlParts = [`<b>${escapeHtml(sender)}</b>`, time.html, channel ? escapeHtml(channel) : ''].filter(Boolean);
   return { markdown: mdParts.join(' · '), html: htmlParts.join(' · ') };
 }
+
+// A tree node for an attribution line: **sender** · [timestamp](permalink) · channel.
+// Used on top of quoted attachments and of each message in a thread copy.
+export function sourceLineNode({ sender, timestamp, channel, permalink }) {
+  const text = (value) => ({ type: 'text', text: value });
+  const parts = [];
+  if (sender) {
+    parts.push({ type: 'el', tag: 'b', attrs: { 'data-stringify-type': 'bold' }, classes: [], children: [text(sender)] });
+  }
+  if (timestamp) {
+    parts.push(permalink ? { type: 'el', tag: 'a', attrs: { href: permalink }, classes: [], children: [text(timestamp)] } : text(timestamp));
+  }
+  if (channel) {
+    parts.push(text(channel));
+  }
+  const children = parts.flatMap((part, i) => (i === 0 ? [part] : [text(' · '), part]));
+  return { type: 'el', tag: 'div', attrs: {}, classes: ['p-rich_text_section', 'tabane-source'], children };
+}

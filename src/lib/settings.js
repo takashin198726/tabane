@@ -5,6 +5,7 @@ import { NOISE_RULES } from './noise.js';
 export const DEFAULTS = Object.freeze({
   grouping: Object.freeze({ enabled: true, maxDepth: 3 }),
   copyMarkdown: Object.freeze({ enabled: true }),
+  workspaceSwitcher: Object.freeze({ column: true }),
   noise: Object.freeze({
     enabled: true,
     heuristic: true,

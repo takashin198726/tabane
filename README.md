@@ -32,11 +32,12 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 | **Sidebar grouping** – nested tree by `-` / `_` prefixes, up to 3 levels | `app.slack.com` | **Verified on live Slack** (2026-09-08) and against the fixture in `test/fixture/` |
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); not yet verified |
 | **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
-| **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink) | `app.slack.com` | Verified against the fixture; **not yet verified on live Slack** |
+| **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink). Forwarded messages copy as an attributed quote, and a button in the thread pane header copies the whole thread with one attribution line per reply | `app.slack.com` | Message copy **verified on live Slack** (2026-09-08); forwarded messages and threads verified against the fixture |
 | **Noise removal** – hides trial / upgrade / hint banners by heuristic (banner-like class name + wording, so promotions Slack adds later are caught too), plus per-item toggles for rail tabs, shortcut hints, toolbar buttons and the unread banner | `app.slack.com` | Verified against the fixture; **not yet verified on live Slack** |
 
-Grouping, copy and noise removal are switched in the options page (`chrome://extensions` → tabane →
-**Details** → **Extension options**). Open-in-browser and the workspace column are always on.
+Grouping, copy, noise removal and the workspace column are switched in the options page
+(`chrome://extensions` → tabane → **Details** → **Extension options**). Open-in-browser and the
+ChromeOS user agent are always on.
 
 ## Install
 
@@ -90,6 +91,8 @@ block at the top of the file, the noise rules live in `NOISE_RULES` in
 | copy `message` / `actionsGroup` | `[data-qa="message_container"]`, `[data-qa="message-actions"]` | A message and its hover toolbar, where the copy button is inserted |
 | copy `richText` | `.p-rich_text_block` with `data-stringify-*` attributes | Rendered message body; the attributes name bold/italic/code/pre/quote/list/emoji/mention |
 | copy `sender` / `timestamp` | `[data-qa="message_sender_name"]`, `a.c-timestamp` (`href`, `data-ts`) | Source line for Shift+click |
+| copy `attachment` / `forwardedCard` | `.c-message_attachment`, `[data-qa="forwarded_message_card"]` (`[class^="byline"]`, `[class^="context"]`) | Forwarded messages: quoted with author, date and context |
+| copy `threadPane` / `threadHeader` | `[data-qa="threads_flexpane"]`, `.p-flexpane_header`, `[data-qa="secondary-header-more"]` | Thread pane; the copy-thread button goes before "more" |
 | noise rules | `[data-qa="tab_rail_*_button"]`, `.p-tab_rail__shortcut_hint`, `.p-message_pane__unread_banner`, … | Fixed hide rules, see `NOISE_RULES` in `src/lib/noise.js` |
 | noise heuristic | `[class*="banner"]`, `[class*="upsell"]`, `[class*="trial"]`, … + wording | Candidates for the trial / upsell / hint detection |
 
@@ -113,7 +116,7 @@ layer without loading the extension.
 Candidate features and the reasoning behind them are in
 [docs/feature-candidates.md](docs/feature-candidates.md) (Japanese).
 
-- Verify copy-as-Markdown and noise removal on live Slack
+- Verify forwarded-message and thread copy on live Slack
 - Verify open-in-browser in a browser profile where Slack has not yet remembered "open in browser"
 - Group folding (click a parent row to collapse its children)
 - Userscript build for Tampermonkey

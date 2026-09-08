@@ -32,6 +32,11 @@
     forwardedCard: '[data-qa="forwarded_message_card"]',
     cardByline: '[class^="byline"]', // author + date link
     cardContext: '[class^="context"]', // e.g. "all_自己紹介 内のスレッド"
+    // Thread pane on the right and its header; the thread button goes before "more".
+    threadPane: '[data-qa="threads_flexpane"]',
+    threadHeader: '.p-flexpane_header',
+    threadHeaderMore: '[data-qa="secondary-header-more"]',
+    threadHeaderClose: '[data-qa="close_flexpane"]',
   };
 
   const CLASS = {
@@ -39,10 +44,14 @@
     button: 'tabane-copy-button',
     done: 'tabane-copy-button--done',
     failed: 'tabane-copy-button--failed',
+    threadItem: 'tabane-copy-thread-item',
+    threadButton: 'tabane-copy-thread-button',
   };
 
+  const THREAD_POLL_MS = 1500;
+
   const url = (path) => chrome.runtime.getURL(path);
-  const [{ treeToMarkdown, treeToHtml, formatSourceHeader }, { loadSettings, watchSettings }] = await Promise.all([
+  const [{ treeToMarkdown, treeToHtml, formatSourceHeader, sourceLineNode }, { loadSettings, watchSettings }] = await Promise.all([
     import(url('src/lib/markdown.js')),
     import(url('src/lib/settings.js')),
   ]);
@@ -101,7 +110,6 @@
     return '';
   }
 
-  const textNode = (text) => ({ type: 'text', text });
   const element = (tag, attrs, children, classes = []) => ({ type: 'el', tag, attrs, classes, children });
   const richTextIn = (el) => Array.from(el.querySelectorAll(SELECTORS.richText));
 
@@ -134,19 +142,8 @@
       const byline = card.querySelector(SELECTORS.cardByline)?.textContent.trim() ?? '';
       const author = date && byline.endsWith(date) ? byline.slice(0, -date.length).trim() : byline;
       const context = card.querySelector(SELECTORS.cardContext)?.textContent.trim() ?? '';
-      const parts = [];
-      if (author) {
-        parts.push(element('b', { 'data-stringify-type': 'bold' }, [textNode(author)]));
-      }
-      if (dateLink) {
-        parts.push(element('a', { href: dateLink.href }, [textNode(date)]));
-      }
-      if (context) {
-        parts.push(textNode(context));
-      }
-      if (parts.length > 0) {
-        const line = parts.flatMap((part, i) => (i === 0 ? [part] : [textNode(' · '), part]));
-        children.push(element('div', {}, line, ['p-rich_text_section']));
+      if (author || date || context) {
+        children.push(sourceLineNode({ sender: author, timestamp: date, channel: context, permalink: dateLink?.href ?? '' }));
       }
     }
     children.push(...blocks.flatMap((block) => toTree(block).children));
@@ -204,6 +201,30 @@
     return written;
   }
 
+  // ---- thread copy ------------------------------------------------------------------------
+
+  // Every message currently rendered in the thread pane (the list is virtualised, so very
+  // long threads only include what has been scrolled into view), each headed by its
+  // attribution line.
+  function collectThread(pane) {
+    const messages = Array.from(pane.querySelectorAll(SELECTORS.message));
+    const children = messages.flatMap((messageEl, i) => {
+      const { root, meta } = collect(messageEl);
+      // The channel is the same for every reply; name it once, on the root message.
+      return [sourceLineNode(i === 0 ? meta : { ...meta, channel: '' }), ...root.children];
+    });
+    return { type: 'el', tag: 'div', attrs: {}, classes: [], children };
+  }
+
+  async function copyThread(pane) {
+    const root = collectThread(pane);
+    const markdown = treeToMarkdown(root);
+    const html = treeToHtml(root);
+    const written = await writeClipboard(markdown, html);
+    document.dispatchEvent(new CustomEvent('tabane:copied', { detail: { markdown, html, written, thread: true } }));
+    return written;
+  }
+
   // ---- toolbar button ---------------------------------------------------------------------
 
   const ICON =
@@ -245,6 +266,57 @@
     const more = group.querySelector(SELECTORS.moreActions)?.closest(SELECTORS.overflowItem) ?? null;
     group.insertBefore(makeButton(), more);
   }
+
+  function makeThreadButton() {
+    const wrapper = document.createElement('span');
+    wrapper.className = CLASS.threadItem;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `c-button-unstyled c-icon_button ${CLASS.threadButton}`;
+    button.setAttribute('aria-label', 'スレッド全体を Markdown でコピー');
+    button.title = 'スレッド全体を Markdown でコピー（読み込まれている返信まで）';
+    button.innerHTML = ICON;
+    button.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const pane = button.closest(SELECTORS.threadPane);
+      if (!pane) {
+        return;
+      }
+      const written = await copyThread(pane);
+      const state = written ? CLASS.done : CLASS.failed;
+      button.classList.add(state);
+      setTimeout(() => button.classList.remove(state), 1200);
+    });
+    wrapper.append(button);
+    return wrapper;
+  }
+
+  // The thread pane is created when a thread opens; poll for it like the sidebar list.
+  function checkThreadPane() {
+    const pane = document.querySelector(SELECTORS.threadPane);
+    const existing = pane?.querySelector(`.${CLASS.threadItem}`);
+    if (!pane || !enabled) {
+      existing?.remove();
+      return;
+    }
+    if (existing) {
+      return;
+    }
+    const header = pane.querySelector(SELECTORS.threadHeader);
+    if (!header) {
+      return;
+    }
+    const anchorButton = header.querySelector(SELECTORS.threadHeaderMore) ?? header.querySelector(SELECTORS.threadHeaderClose);
+    const anchor = anchorButton?.parentElement?.tagName === 'SPAN' ? anchorButton.parentElement : anchorButton;
+    if (!anchor) {
+      return;
+    }
+    anchor.before(makeThreadButton());
+  }
+
+  checkThreadPane();
+  setInterval(checkThreadPane, THREAD_POLL_MS);
 
   // The toolbar is rendered on hover, so inject shortly after the pointer enters a message.
   document.addEventListener(

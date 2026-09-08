@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { treeToMarkdown, treeToHtml, formatSourceHeader } from '../src/lib/markdown.js';
+import * as markdown from '../src/lib/markdown.js';
+
+const { treeToMarkdown, treeToHtml, formatSourceHeader } = markdown;
+const await_import = markdown;
 
 // Tree nodes mirror what src/copy-markdown.js builds from the DOM:
 //   { type: 'text', text }  |  { type: 'el', tag, attrs: {}, classes: [], children: [] }
@@ -126,4 +129,13 @@ test('a forwarded message renders as a quote with an attribution line on top', (
   const tree = block(el('blockquote', s('quote'), [attribution, section(t('本文'), el('br'), t('二行目'))], ['tabane-forwarded']));
   assert.equal(treeToMarkdown(tree), '> **マエス** · [9月2日](https://p) · all_自己紹介 内のスレッド\n>\n> 本文\n> 二行目');
   assert.equal(treeToHtml(tree), '<blockquote><p><b>マエス</b> · <a href="https://p">9月2日</a> · all_自己紹介 内のスレッド</p><p>本文<br>二行目</p></blockquote>');
+});
+
+test('sourceLineNode builds an attribution line usable at the top of a message or thread entry', () => {
+  const { sourceLineNode } = await_import;
+  const line = sourceLineNode({ sender: 's', timestamp: 't', channel: '#c', permalink: 'https://p' });
+  assert.equal(treeToMarkdown(block(line, section(t('body')))), '**s** · [t](https://p) · #c\n\nbody');
+  assert.equal(treeToHtml(block(line)), '<p><b>s</b> · <a href="https://p">t</a> · #c</p>');
+  const noLink = sourceLineNode({ sender: 's', timestamp: 't', channel: '', permalink: '' });
+  assert.equal(treeToMarkdown(block(noLink)), '**s** · t');
 });

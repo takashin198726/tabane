@@ -30,6 +30,7 @@
   let settings = await loadSettings();
 
   function applyRules() {
+    document.documentElement.classList.toggle('tabane-no-workspace-column', settings.workspaceSwitcher.column === false);
     for (const rule of NOISE_RULES) {
       const on = settings.noise.enabled && settings.noise.rules[rule.id] === true;
       document.documentElement.classList.toggle(`tabane-hide-${rule.id}`, on);

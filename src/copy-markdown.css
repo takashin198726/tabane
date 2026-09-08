@@ -1,5 +1,10 @@
-.tabane-copy-button svg {
+.tabane-copy-button svg,
+.tabane-copy-thread-button svg {
   display: block;
+}
+
+.tabane-copy-thread-item {
+  display: inline-flex;
 }
 
 .tabane-copy-button--done {

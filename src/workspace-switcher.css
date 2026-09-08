@@ -4,8 +4,9 @@
    the rest of the client beside it. The container is float:left with a full-height box, so
    without the position/margin rules the workspace would be pushed below it.
    Which workspaces appear in the column is decided by workspace-switcher.js (ChromeOS UA);
-   without it Slack lists only the current one. */
-.p-workspace_switcher_prototype {
+   without it Slack lists only the current one. src/noise.js adds html.tabane-no-workspace-column
+   when the column is switched off in the options. */
+html:not(.tabane-no-workspace-column) .p-workspace_switcher_prototype {
   display: block !important;
   opacity: 1 !important;
   position: absolute !important;
@@ -14,7 +15,7 @@
   height: 100% !important;
 }
 
-.p-client_workspace_wrapper {
+html:not(.tabane-no-workspace-column) .p-client_workspace_wrapper {
   margin-left: 60px !important;
   width: calc(100% - 60px) !important;
 }
