@@ -33,9 +33,10 @@ no build step and no runtime dependencies, so that keeping up with Slack's DOM c
 | **Open in browser** – follows the "use Slack in your browser" link instead of waiting for the desktop app | `*.slack.com/archives/*`, `*.slack.com/ssb/redirect*` | Ported from [yumebayashi/Open-Slack-in-Browser-not-App](https://github.com/yumebayashi/Open-Slack-in-Browser-not-App); **verified on live Slack** (2026-09-08, incognito profile) |
 | **Workspace switcher** – keeps Slack's own workspace column (one icon per signed-in workspace) always visible: a ChromeOS user agent makes Slack list every workspace, and CSS un-hides the column | `app.slack.com` | **Verified on live Slack** (2026-09-08, 6 workspaces) |
 | **Copy as Markdown** – a button in the message hover toolbar copies the message as GitHub-flavoured Markdown (`text/plain`) and as HTML (`text/html`) at the same time, so it pastes into Markdown editors as Markdown and back into Slack with its formatting. Shift+click adds a quoted source line (sender, time, channel, permalink). Forwarded messages copy as an attributed quote, and a button in the thread pane header copies the whole thread with one attribution line per reply | `app.slack.com` | Message, thread and forwarded-message copy **verified on live Slack** (2026-09-08) |
+| **Mention groups** – after you confirm an @mention of a person in the composer, a small list shows the user groups that person belongs to (smallest first, with member counts); picking one swaps the person for the group mention. Tab moves into the list, Esc closes it. Membership comes from the Slack API with a token you register per workspace in the options page; nothing is shown for a workspace without one | `app.slack.com`, plus `slack.com/api` from the background worker | **Not yet verified on live Slack.** List, swap and fallback verified against the fixture (2026-11-27); the composer selectors are assumptions |
 | **Noise removal** – hides trial / upgrade / hint banners by heuristic (banner-like class name + wording, so promotions Slack adds later are caught too), plus per-item toggles for rail tabs, shortcut hints, toolbar buttons and the unread banner | `app.slack.com` | Heuristic **verified on live Slack** (hides Slack's hint banner); trial and notification banners verified against the fixture |
 
-Grouping, copy, noise removal and the workspace column are switched in the options page
+Grouping, copy, mention groups, noise removal and the workspace column are switched in the options page
 (`chrome://extensions` → tabane → **Details** → **Extension options**). Open-in-browser and the
 ChromeOS user agent are always on.
 
@@ -52,6 +53,40 @@ Requires Chrome 111 or later (`"world": "MAIN"` content scripts).
 This is an unreviewed extension that rewrites Slack's DOM. Loading it into a company workspace
 may be a concern for your IT / audit team. The author uses it **only in personal workspaces**;
 please make that call for your own organisation.
+
+Mention groups is the one feature that only makes sense where user groups exist (paid plans),
+which usually means a company workspace. It needs a Slack app token on top of the extension, and
+your workspace admins may have to approve that app.
+
+## Mention groups and the Slack API
+
+Everything else in tabane only reads and rewrites the page. This feature is the exception:
+Slack's page does not say who is in which user group, so tabane asks the Slack API.
+
+- **What is called.** `auth.test` (which workspace a token belongs to) and `usergroups.list`
+  with `include_users` (the groups and their member ids). Both read-only; the scope needed is
+  `usergroups:read`. Nothing else is fetched: no names, no e-mail addresses, no messages.
+- **Whose token.** A bot (`xoxb-`) or user (`xoxp-`) token of a Slack app you create yourself,
+  pasted into the options page, one per workspace. Browser session tokens (`xoxc-`, `xoxd-`)
+  are refused: tabane never reuses your signed-in session and never reads Slack's cookies or
+  page storage for credentials.
+- **Where the token goes.** It is kept in `chrome.storage.local` (this browser profile only, not
+  synced, not encrypted) and sent only to `https://slack.com/api/`, in the `Authorization`
+  header, without cookies. Slack's page scripts cannot read extension storage; tabane's own
+  scripts can.
+- **How fresh the data is.** Groups are fetched when a token is registered, on **再取得** in the
+  options page, and in the background once the list is older than 6 hours (the next lookup
+  triggers it; after a failure it waits 15 minutes). A membership change can take that long
+  to show up.
+- **How the swap works.** tabane never writes mention markup. It selects the person's mention,
+  types `@handle` over it the way the keyboard would, and clicks the matching row in Slack's
+  own autocomplete, so the group mention in the message is the one Slack built. If that row
+  cannot be found, the typed `@handle` stays and a hint asks you to confirm it with Enter.
+- **When the list appears.** Only right after a single mention is confirmed with the caret
+  behind it. Restored drafts, pasted text and messages opened for editing do not trigger it.
+- **Limits.** Workspace tokens only: on Enterprise Grid the token of one workspace is used for
+  the org URL, and org-level tokens are not supported. Tokens of apps with token rotation
+  (`xoxe…`) are not supported either.
 
 ## How grouping works
 
@@ -99,6 +134,9 @@ block at the top of the file, the noise rules live in `NOISE_RULES` in
 | copy `sender` / `timestamp` | `[data-qa="message_sender_name"]`, `a.c-timestamp` (`href`, `data-ts`) | Source line for Shift+click |
 | copy `attachment` / `forwardedCard` | `.c-message_attachment`, `[data-qa="forwarded_message_card"]` (`[class^="byline"]`, `[class^="context"]`) | Forwarded messages: quoted with author, date and context |
 | copy `threadPane` / `threadHeader` | `[data-qa="threads_flexpane"]`, `.p-flexpane_header`, `[data-qa="secondary-header-more"]` | Thread pane; the copy-thread button goes before "more" |
+| mention `editor` | `.ql-editor` | The composer's rich text editor; mentions are watched and typed over here |
+| mention `mention` + `idAttr` | `ts-mention`, `data-id` | A confirmed mention; an id starting with `U`/`W` is a person, `S` a user group. **Assumed, not yet checked on live Slack** |
+| mention `autocompleteOption` | `[role="listbox"] [role="option"]`, `[data-qa="texty_autocomplete_menu"] [role="option"]`, `.c-texty_autocomplete__result` | Rows of Slack's own @ autocomplete; the row reading exactly `@handle` is clicked. **Assumed, not yet checked on live Slack** |
 | noise rules | `[data-qa="tab_rail_*_button"]`, `.p-tab_rail__shortcut_hint`, `.p-message_pane__unread_banner`, … | Fixed hide rules, see `NOISE_RULES` in `src/lib/noise.js` |
 | noise heuristic | `[class*="banner"]`, `[class*="upsell"]`, `[class*="trial"]`, … + wording | Candidates for the trial / upsell / hint detection |
 
@@ -115,7 +153,9 @@ python3 tools/make-icons.py   # regenerate icons (needs Pillow)
 
 `test/fixture/index.html` is a fake Slack sidebar with buttons that simulate what Slack does
 at runtime (row reuse, appending a channel, workspace switch, unread bold), for checking the DOM
-layer without loading the extension.
+layer without loading the extension. It also has a fake composer with a stand-in for Slack's
+autocomplete: buttons confirm a mention, restore a draft or keep the autocomplete from opening,
+and the group lookup is answered by a stub instead of the background worker.
 
 ## Roadmap
 

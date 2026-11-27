@@ -51,6 +51,26 @@ tabane に次に載せる機能を選ぶための調査メモ。既存拡張・u
 - 日本特有の需要は **IME の Enter 問題** と **出退勤挨拶へのリアクション文化** に集中している
 - Slack 公式設定で既に解決できるもの（アニメーション停止、24 時間表記、WYSIWYG 無効化、Compact 表示）は、記事化されるほど見つけにくいだけで、拡張で作る価値は薄い
 
+## 追記（2026-11-27）: メンションのグループ入れ替えと Slack API
+
+「人への @メンションを確定したら、その人の所属ユーザーグループを候補に出し、選ぶとグループ
+メンションに入れ替える」機能を追加した。この機能に限り、上の前提「Slack API・トークンは
+使わない」に例外を設ける。
+
+- **例外にした理由**: 誰がどのグループに所属するかは Slack のページ（DOM）からは読み取れない。
+  グループのメンバー一覧を開いたときに画面から集める方式も検討したが、開いたグループしか
+  分からず、DOM 依存も大きい
+- **例外の範囲**: 公式の Web API を、利用者が自分で作った Slack アプリのトークンで呼ぶ。
+  メソッドは `auth.test` と `usergroups.list` の 2 つ、読み取り専用、スコープは
+  `usergroups:read` のみ
+- **変えていないこと**: 「Cookie からトークンを取って Slack API を叩く」は引き続きやらない。
+  セッショントークン（`xoxc-` / `xoxd-`）は入力されても拒否する。外部バックエンドも使わない
+- **残る懸念**: ユーザーグループは有料プランの機能なので、この機能は実質的に会社の
+  ワークスペース向けになる。「未審査の拡張を業務 Slack に入れない」という決定とは別に判断が
+  必要で、トークンを発行する Slack アプリにも管理者の承認が要る場合がある
+- **未検証**: 入力欄の DOM（`ts-mention` と補完候補のセレクタ）は推定で、fixture でしか
+  確認していない。実 Slack での確認が済むまで README の状態欄は「未検証」とする
+
 ## 主な出典
 
 - 既存拡張: [Refined](https://github.com/g3rv4/Refined)、[Tight](https://github.com/rileytomasek/tight)、[Slack View Optimizer](https://chromewebstore.google.com/detail/slack-view-optimizer/locdplfifjadobbmoamhlabnkhcaelkm)、[Slack-Privacy-Extension](https://github.com/33j33/Slack-Privacy-Extension)、[SlackMinifier](https://github.com/WesCook/SlackMinifier)、[slackfix](https://github.com/dkoes/slackfix)、[hide-slack-activity](https://github.com/garnetred/hide-slack-activity)、[slack-keep-presence](https://github.com/eskerda/slack-keep-presence)（停止）、[Neutral Face Emoji Tools](https://chromewebstore.google.com/detail/neutral-face-emoji-tools/anchoacphlfbdomdlomnbbfhcmcdmjej)、[SlackUtils](https://chromewebstore.google.com/detail/slackutils/kljjdpaicefcaofhajdnpokmiflaagja)、[slack-to-markdown](https://github.com/cozmo/slack-to-markdown)

@@ -49,6 +49,18 @@
     },
     {
       "matches": [
+        "https://app.slack.com/*"
+      ],
+      "js": [
+        "src/mention-groups.js"
+      ],
+      "css": [
+        "src/mention-groups.css"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
         "https://*.slack.com/archives/*",
         "https://*.slack.com/ssb/redirect*"
       ],
@@ -91,6 +103,13 @@
     "storage",
     "clipboardWrite"
   ],
+  "host_permissions": [
+    "https://slack.com/api/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
   "options_ui": {
     "page": "options/options.html",
     "open_in_tab": false

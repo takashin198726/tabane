@@ -38,3 +38,8 @@ test('the workspace column is on by default', () => {
 test('group folding is on by default', () => {
   assert.equal(DEFAULTS.grouping.folding, true);
 });
+
+test('mention groups are on by default and can be switched off', () => {
+  assert.equal(DEFAULTS.mentionGroups.enabled, true);
+  assert.equal(mergeSettings({ mentionGroups: { enabled: false } }).mentionGroups.enabled, false);
+});
