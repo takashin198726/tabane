@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="/src/sidebar-grouping.css">
 <link rel="stylesheet" href="/src/copy-markdown.css">
 <link rel="stylesheet" href="/src/noise.css">
+<link rel="stylesheet" href="/src/mention-groups.css">
 <style>
   body { margin: 0; font: 15px/1.4 -apple-system, "Helvetica Neue", sans-serif; display: flex; min-height: 100vh; }
   .rail { width: 70px; background: #2b0a2c; color: #ddd; padding: 12px 0; font-size: 11px; text-align: center; }
@@ -42,6 +43,14 @@
   .p-flexpane_header .c-icon_button { width: 28px; height: 28px; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
   .controls { padding: 12px 16px; border-top: 1px solid #ddd; font-size: 13px; }
   .controls button, .controls label { margin-right: 10px; }
+  .p-composer { margin: 0 16px 8px; border: 1px solid #bbb; border-radius: 8px; }
+  .ql-editor { min-height: 22px; padding: 8px 12px; outline: none; }
+  .ql-editor p { margin: 0; }
+  ts-mention { background: #e8f5fa; color: #1264a3; border-radius: 3px; padding: 0 2px; }
+  #fake-autocomplete { position: fixed; background: #fff; border: 1px solid #bbb; border-radius: 6px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  #fake-autocomplete [role="option"] { padding: 3px 8px; cursor: pointer; }
+  #fake-autocomplete [role="option"]:hover { background: #eee; }
+  #fake-autocomplete .desc { color: #888; margin-left: 6px; }
   pre#log { font-size: 12px; background: #f3f3f3; padding: 8px; max-height: 240px; overflow: auto; white-space: pre-wrap; }
 </style>
 </head>
@@ -53,7 +62,18 @@
     const listeners = [];
     const local = {};
     window.chrome = {
-      runtime: { getURL: (path) => '/' + path },
+      runtime: {
+        getURL: (path) => '/' + path,
+        // Stand-in for src/background.js: U1 is in three groups, everyone else in none. The
+        // fixture URL carries no workspace id, so unlike the real worker this ignores teamId.
+        sendMessage: async (message) => {
+          if (message?.type !== 'tabane:mention-groups:lookup') { return undefined; }
+          const groups = message.userId === 'U1'
+            ? [{ id: 'S2', handle: 'dev-backend', name: 'Backend', userCount: 2 }, { id: 'S3', handle: 'dev', name: 'Developers', userCount: 5 }, { id: 'S1', handle: 'eng', name: 'Engineering', userCount: 12 }]
+            : [];
+          return { groups };
+        },
+      },
       storage: {
         sync: {
           get: async () => JSON.parse(JSON.stringify(store)),
@@ -143,12 +163,20 @@ timeout: 30</pre>
       </div>
     </div>
   </div>
+  <!-- Fake composer. Slack's editor is a contenteditable .ql-editor; a confirmed mention is a ts-mention element. -->
+  <div class="p-composer"><div class="ql-editor" id="editor" contenteditable="true" role="textbox" aria-multiline="true"><p><br></p></div></div>
+  <div id="fake-autocomplete" role="listbox" hidden></div>
   <div class="p-client__banners" id="notify">🔔 通知を受け取りたい場合には、Slack に許可を与えてください。 <a href="#">通知を有効にする</a></div>
   <div class="controls">
     <button id="add-banner">Slack adds a new upsell banner later</button>
     <button id="toggle-grouping">Toggle grouping setting</button>
     <button id="toggle-noise">Toggle noise setting</button>
     <button id="rule-activity">Toggle rule: hide Activity tab</button>
+    <button id="mention-u1">Confirm @maesu in the composer (in 3 groups)</button>
+    <button id="mention-u9">Confirm @john (in no group)</button>
+    <button id="restore-draft">Restore a draft with a mention</button>
+    <label><input type="checkbox" id="break-autocomplete"> Slack's autocomplete does not open</label>
+    <button id="toggle-mention-groups">Toggle mention groups setting</button>
     <span id="hidden-count"></span>
     <pre id="log"></pre>
   </div>
@@ -222,9 +250,80 @@ timeout: 30</pre>
     s.noise ??= {}; s.noise.rules ??= {}; s.noise.rules['rail-activity'] = !s.noise.rules['rail-activity'];
     await chrome.storage.sync.set(s); log('rule rail-activity -> ' + s.noise.rules['rail-activity']);
   };
+
+  // ---- fake composer: what Slack does around mentions ------------------------------------
+  const editor = document.getElementById('editor');
+  const menu = document.getElementById('fake-autocomplete');
+  const FAKE_GROUPS = [['S3', 'dev', 'Developers'], ['S2', 'dev-backend', 'Backend'], ['S1', 'eng', 'Engineering']];
+  function makeMention(id, label) {
+    const el = document.createElement('ts-mention');
+    el.setAttribute('data-id', id); el.setAttribute('data-label', label);
+    el.setAttribute('spellcheck', 'false'); el.contentEditable = 'false';
+    el.textContent = label;
+    return el;
+  }
+  // Confirming a mention: Slack inserts the element plus a space and leaves the caret after it.
+  function insertMention(id, label, range) {
+    range.deleteContents();
+    const space = document.createTextNode(' ');
+    range.insertNode(space);
+    range.insertNode(makeMention(id, label));
+    const sel = getSelection(); sel.removeAllRanges();
+    const caret = document.createRange(); caret.setStart(space, 1); caret.collapse(true); sel.addRange(caret);
+  }
+  function caretRangeInEditor() {
+    editor.focus();
+    const sel = getSelection();
+    if (sel.rangeCount && editor.contains(sel.anchorNode)) { return sel.getRangeAt(0); }
+    const range = document.createRange(); range.selectNodeContents(editor.querySelector('p') ?? editor); range.collapse(false);
+    return range;
+  }
+  document.getElementById('mention-u1').onclick = () => { insertMention('U1', '@maesu', caretRangeInEditor()); log('confirmed @maesu (U1)'); };
+  document.getElementById('mention-u9').onclick = () => { insertMention('U9', '@john', caretRangeInEditor()); log('confirmed @john (U9)'); };
+  // A restored draft: the whole paragraph arrives at once and the caret is not after the mention.
+  document.getElementById('restore-draft').onclick = () => {
+    const p = document.createElement('p');
+    p.append('下書き ', makeMention('U1', '@maesu'), ' に確認を依頼する');
+    editor.replaceChildren(p);
+    getSelection().removeAllRanges();
+    log('restored a draft');
+  };
+  // Slack's autocomplete: opens while "@word" is being typed before the caret, lists groups
+  // whose handle starts with the word, and a click turns the typed text into a group mention.
+  editor.addEventListener('input', () => {
+    menu.hidden = true;
+    const sel = getSelection();
+    if (document.getElementById('break-autocomplete').checked || !sel.isCollapsed || sel.anchorNode?.nodeType !== Node.TEXT_NODE) { return; }
+    const node = sel.anchorNode;
+    const match = /@([\w-]+)$/.exec(node.nodeValue.slice(0, sel.anchorOffset));
+    if (!match) { return; }
+    const rows = FAKE_GROUPS.filter(([, handle]) => handle.startsWith(match[1])).map(([id, handle, name]) => {
+      const row = document.createElement('div');
+      row.setAttribute('role', 'option');
+      row.innerHTML = `<span class="handle">@${handle}</span><span class="desc">${name}</span>`;
+      row.addEventListener('click', () => {
+        const range = document.createRange();
+        range.setStart(node, match.index); range.setEnd(node, match.index + match[0].length);
+        insertMention(id, '@' + handle, range);
+        menu.hidden = true;
+        log(`autocomplete confirmed @${handle} (${id})`);
+      });
+      return row;
+    });
+    if (rows.length === 0) { return; }
+    menu.replaceChildren(...rows);
+    const rect = editor.getBoundingClientRect();
+    menu.style.left = rect.left + 'px'; menu.style.bottom = (innerHeight - rect.top + 4) + 'px';
+    menu.hidden = false;
+  });
+  document.addEventListener('tabane:mention-swapped', (e) => {
+    log(`--- mention swapped: @${e.detail.handle} typed=${e.detail.typed} confirmed=${e.detail.confirmed} ---\n--- composer ---\n${editor.innerHTML}`);
+  });
+  document.getElementById('toggle-mention-groups').onclick = () => flip('mentionGroups.enabled');
 </script>
 <script src="/src/sidebar-grouping.js"></script>
 <script src="/src/copy-markdown.js"></script>
 <script src="/src/noise.js"></script>
+<script src="/src/mention-groups.js"></script>
 </body>
 </html>

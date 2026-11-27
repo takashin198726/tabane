@@ -13,6 +13,15 @@
   p.note { color: #616061; font-size: 12px; margin: 6px 0 0; }
   fieldset { border: 0; padding: 0; margin: 0; }
   fieldset:disabled { opacity: .5; }
+  .token-row { display: flex; gap: 6px; padding: 6px 0 2px 24px; }
+  .token-row input { flex: 1; min-width: 0; font: inherit; padding: 2px 6px; }
+  button { font: inherit; }
+  #mg-status { padding-left: 24px; min-height: 1.6em; }
+  #mg-status.error, .team .error { color: #e01e5a; }
+  #mg-teams { list-style: none; margin: 4px 0 0; padding: 0 0 0 24px; }
+  .team { display: flex; align-items: baseline; gap: 6px; padding: 3px 0; }
+  .team .info { flex: 1; min-width: 0; }
+  .team .meta { color: #616061; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -30,6 +39,17 @@
 <h2>メッセージ</h2>
 <label><input type="checkbox" data-path="copyMarkdown.enabled"> ホバーツールバーに「Markdown でコピー」を追加する</label>
 <p class="note">クリックで本文、Shift+クリックで引用元（投稿者・時刻・チャンネル・リンク）付き。スレッド枠のヘッダにはスレッド全体をコピーするボタンが付きます。Slack に貼り戻すと書式が保たれます。</p>
+
+<label><input type="checkbox" data-path="mentionGroups.enabled"> @メンションした人の所属グループを候補に出し、選ぶとグループメンションに入れ替える</label>
+<p class="note">所属の取得に Slack API を使います。自分で作った Slack アプリのトークン（<code>usergroups:read</code> スコープ、xoxb- または xoxp-）をワークスペースごとに登録してください。トークンはこのブラウザの中だけに保存し、slack.com の API 以外には送りません。登録のないワークスペースでは何も表示しません。</p>
+<fieldset id="mg-fieldset">
+  <div class="token-row">
+    <input type="password" id="mg-token" placeholder="xoxb-…" autocomplete="off" spellcheck="false" aria-label="Slack アプリのトークン">
+    <button type="button" id="mg-add">登録</button>
+  </div>
+  <p class="note" id="mg-status" role="status"></p>
+  <ul id="mg-teams"></ul>
+</fieldset>
 
 <h2>ノイズ除去</h2>
 <label><input type="checkbox" data-path="noise.enabled"> ノイズ除去を使う</label>
